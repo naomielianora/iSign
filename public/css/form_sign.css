@@ -19,7 +19,7 @@ html, body{
     background-color: #366AB2;
 }
 
-body{
+#outer{
     display: flex;
     align-items: center;
     justify-content: center;
@@ -29,6 +29,7 @@ body{
 #all{
     display: grid;
     justify-content: center;
+    margin-top: 80px;
 }
 
 h1{

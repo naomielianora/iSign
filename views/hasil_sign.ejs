@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iSign</title>
+    <link rel="stylesheet" type="text/css" href="/css/hasil_sign.css">
+</head>
+<body>
+    <%- include('./layout/header.ejs') %>
+    <div id="outer">
+        <div id="all">
+            <h1> Hash Value</h1>
+            <div id="box">
+                <div id="containerText">
+                    <input type="text" name="hasilHash" id="hasilHash" disabled>
+                </div>
+
+                <div id="buttons">
+                    <a href="https://me-qr.com/qr-code-generator/text" target="_blank" id="generateButton">Generate QR</a>
+                    <a href="" id="copyButton">Copy</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

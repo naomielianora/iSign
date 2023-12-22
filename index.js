@@ -19,3 +19,11 @@ app.get('/', (req, res)=>{
 app.get('/check_sign', (req, res)=>{
     res.render('check_sign')
 })
+
+app.get('/form_sign', (req, res)=>{
+    res.render('form_sign')
+})
+
+app.get('/hasil_sign', (req, res)=>{
+    res.render('hasil_sign')
+})
