@@ -15,3 +15,7 @@ app.use(express.static('public'));
 app.get('/', (req, res)=>{
     res.render('home')
 })
+
+app.get('/check_sign', (req, res)=>{
+    res.render('check_sign')
+})
