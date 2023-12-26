@@ -11,6 +11,14 @@ app.set('view engine', 'ejs');
 //dipakai untuk routing path file css, assets
 app.use(express.static('public'));
 
+app.get('/sign_up', (req, res)=>{
+    res.render('sign_up')
+})
+
+app.get('/log_in', (req, res)=>{
+    res.render('log_in')
+})
+
 //page yang pertama kali muncul (home)
 app.get('/', (req, res)=>{
     res.render('home')
@@ -27,3 +35,4 @@ app.get('/form_sign', (req, res)=>{
 app.get('/hasil_sign', (req, res)=>{
     res.render('hasil_sign')
 })
+
