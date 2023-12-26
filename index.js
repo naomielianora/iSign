@@ -19,6 +19,10 @@ app.get('/log_in', (req, res)=>{
     res.render('log_in')
 })
 
+app.get('/log_out', (req, res)=>{
+    res.render('log_out')
+})
+
 //page yang pertama kali muncul (home)
 app.get('/', (req, res)=>{
     res.render('home')
@@ -36,3 +40,6 @@ app.get('/hasil_sign', (req, res)=>{
     res.render('hasil_sign')
 })
 
+app.get('/signature_log', (req, res)=>{
+    res.render('signature_log')
+})
