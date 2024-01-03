@@ -7,13 +7,13 @@
     <link rel="stylesheet" type="text/css" href="/css/hasil_sign.css">
 </head>
 <body>
-    <%- include('./layout/header.ejs') %>
+    <%- include('./layout/user_header.ejs') %>
     <div id="outer">
         <div id="all">
             <h1> Hash Value</h1>
             <div id="box">
                 <div id="containerText">
-                    <input type="text" name="hasilHash" id="hasilHash" disabled>
+                    <input type="text" name="hasilHash" id="hasilHash" value = <%- digitalSignature %> readonly>
                 </div>
 
                 <div id="buttons">

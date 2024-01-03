@@ -10,13 +10,19 @@
 <body>
     <div class = "navigator_log_in">
 
-        <img id = "logo_login" src = "/assets/logo login_2.png" alt = "login_logo">
+        <a href = "/"><img id = "logo_signup" src = "/assets/logo login_2.png" alt = "login_logo"></a>
         <h1 id = "login">Log In</h1>
         <form method = "POST" action = "/log_in">
             <div class = "content_log_in">
                 <input type="text" class = "input_username_public" name = "username_public" placeholder="Username (3 Capital Letter)" required>
                 <input type="password" class = "input_pass_public" name = "pass_public" placeholder="Password" required>
                 <button class = "blue_button">Log in</button>
+
+                <% if (showAlert) { %>
+                    <div class = "login_warning">
+                        *Wrong email and/or password, please try again
+                    </div>
+                <% }%>
             </div>    
         </form>
         

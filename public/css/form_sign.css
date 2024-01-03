@@ -29,7 +29,7 @@ html, body{
 #all{
     display: grid;
     justify-content: center;
-    margin-top: 80px;
+    margin-top: 50px;
 }
 
 h1{
@@ -41,18 +41,27 @@ h1{
 #box{
     background-color: white;
     width: 450px;
-    height: 230px;
     border-radius: 15px;
     margin-top: 10px;
     margin-left: 10px;
     margin-right: 10px;
     padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-form{
+#form-content{
     display: grid;
     grid-template-columns: 0.5fr 1fr;
     margin: 20px;
+}
+
+form{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
 }
 
 label{
@@ -66,26 +75,37 @@ input[type="text"]{
     background-color: lightgrey;
     border: none;
     border-radius: 5px;
-
+    font-size: 20px;
     height: 50px;
     margin-bottom: 20px;
 }
 
-#signButtondiv{
-    display: flex;
-    flex-direction: row-reverse;
-    justify-content: flex-start;
+input[type="password"]{
+    background-color: lightgrey;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    height: 50px;
+    margin-bottom: 20px;
+}
+
+.input_signedby{
+    text-align: center;
+    font-size: 30px;
 }
 
 #signButton{
-    font-family: Regular;
-    color: white;
-    padding: 7px;
     background-color: #3969B3;
-    border-radius: 15px;
-    width: 80px;
-    height: 20px;
-    text-align: center;
-    text-decoration: none;
-    margin-right: 20px;
+    border: none;
+    font-family: Regular;
+    width: 100px;
+    color: #FFFFFF;
+    padding: 5px;
+    border-radius: 20px;
+}
+
+.password_warning{
+    color: red;
+    font-size: 13px;
+    font-family: Regular;
 }

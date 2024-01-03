@@ -26,6 +26,30 @@ html, body{
     font-family: Bold;
 }
 
+h2{
+    color: #1A2C56;
+    font-family: Regular;
+    text-align: center;
+}
+
+.content_sign_up_conf{
+    background-color: #FFFFFF;
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    border-radius: 15px;
+    align-items: center;
+    width: 400px;
+    flex-direction: column;
+
+}
+
+.login_warning{
+    color: red;
+    font-size: 13px;
+    font-family: Regular;
+}
+
 .navigator_log_in {
     display: flex;
     flex-direction: column;

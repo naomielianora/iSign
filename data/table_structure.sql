@@ -11,10 +11,10 @@ CREATE TABLE `User` (
   `id_user` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `nama_lengkap` varchar(50) NOT NULL,
   `username` varchar(3) NOT NULL,
-  `email` varchar(50) NOT NULL,
   `password` varchar(50) NOT NULL,
   `private_key` TEXT,
   `public_key` TEXT,
+  `salt` VARBINARY(100),
   CONSTRAINT `UK_user` UNIQUE (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
