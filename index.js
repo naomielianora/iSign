@@ -165,6 +165,7 @@ const current_date = new Date().toISOString().slice(0, 10); //contoh output: 202
 
 app.post('/sign_doc', auth, async(req,res) =>{
     let no_surat = req.body.no_surat;
+    console.log(no_surat);
     let signedby = req.body.signedby;
     let password_input = req.body.password
     let password = crypto.createHash('sha256').update(password_input).digest('base64');
@@ -183,11 +184,17 @@ app.post('/sign_doc', auth, async(req,res) =>{
                 const md = forge.md.sha256.create();
                 md.update(data, 'utf-8');
                 const hash = md.digest();
-                console.log(hash);
-                console.log(md);
+
+        // const md = crypto.createHash('sha256').update(data).digest('base64');
+        
+
             
                 // Sign the hash with the private key
                 const signature = privateKey.sign(md);
+
+                console.log('Md:', md);
+                console.log('Hash:', hash);
+        console.log('Signature:', forge.util.encode64(signature));
             
                 return {
                 data,
@@ -255,14 +262,21 @@ app.post('/check_sign', async(req, res)=>{
         const md = forge.md.sha256.create();
         md.update(data, 'utf-8');
         const hash = md.digest();
-        console.log(hash);
-        console.log(md);
+
+        // const md = crypto.createHash('sha256').update(data).digest('base64');
+
     
         // Decode the signature
         const decodedSignature = forge.util.decode64(signature);
+
+        console.log('Md:', md);
+        console.log('Hash:', hash);
+        console.log('Signature:', signature);
+    console.log('Decoded Signature:', forge.util.encode64(decodedSignature));
+
     
         // Verify the signature using the public key
-        const isValid = publicKey.verify(hash, decodedSignature);
+        const isValid = publicKey.verify(md.digest().getBytes(), decodedSignature);
     
         return isValid;
     }
