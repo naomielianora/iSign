@@ -9,6 +9,7 @@ const app = express();
 
 import { usernameChecker, signUpUser } from "./query/querySignUp.js";
 import { getUserData } from "./query/queryLogin.js";
+import { getSignerPublicKey, insertSigLog, getSigLog } from "./query/queryUser.js";
 
 app.listen(PORT, () => {
     console.log(`Server is ready, listening on port ${PORT}`);
@@ -71,34 +72,8 @@ app.post('/sign_up', function(req, res) {
     const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
     const publicKey = forge.pki.publicKeyToPem(keyPair.publicKey);
     const privateKey = forge.pki.privateKeyToPem(keyPair.privateKey);
-
-    // Function to derive a key from the user's password
-    function deriveKeyFromPassword(password, salt) {
-        return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
-    }
-
-    // Function to encrypt the private key using the user's password
-    function encryptPrivateKey(privateKey, password) {
-        const salt = crypto.randomBytes(16);
-        const key = deriveKeyFromPassword(password, salt);
-        console.log('Derived Key before:', key.toString('base64'));
-        console.log("Salt before " +salt.toString('base64'))
-
-        const cipher = crypto.createCipheriv('aes-256-cbc', key, salt);
-        console.log("cipher before " +cipher)
-        let encryptedPrivateKey = cipher.update(privateKey, 'utf-8', 'base64');
-        encryptedPrivateKey += cipher.final('base64');
-        console.log("encryptedPrivateKey before " +encryptedPrivateKey)
-
-        return {
-            encryptedPrivateKey,
-            salt: salt.toString('base64'),
-        };
-    }
-
-    const { encryptedPrivateKey, salt } = encryptPrivateKey(privateKey, pass_input);
-    // masukan ke database lalu apabila berhasil maka alihkan ke page konfirmasi
-    signUpUser(nama_lengkap_sign_up, username_sign_up, password_sign_up, encryptedPrivateKey, publicKey, salt).then(() => 
+    // // masukan ke database lalu apabila berhasil maka alihkan ke page konfirmasi
+    signUpUser(nama_lengkap_sign_up, username_sign_up, password_sign_up, privateKey, publicKey).then(() => 
         res.redirect('/sign_up_conf')
     )
 })
@@ -174,11 +149,6 @@ app.get('/log_out', (req, res) => {
   })
 
 
-app.get('/check_sign', (req, res)=>{
-    res.render('check_sign', {
-        nama_lengkap: req.session.nama_lengkap || "",
-    })
-})
 
 
 let passwordWrong = false;
@@ -191,7 +161,9 @@ app.get('/form_sign', auth, (req, res)=>{
     passwordWrong = false;
 })
 
-app.post('/sign_doc', auth, (req,res) =>{
+const current_date = new Date().toISOString().slice(0, 10); //contoh output: 2023-12-25
+
+app.post('/sign_doc', auth, async(req,res) =>{
     let no_surat = req.body.no_surat;
     let signedby = req.body.signedby;
     let password_input = req.body.password
@@ -203,39 +175,7 @@ app.post('/sign_doc', auth, (req,res) =>{
             //jangan tampilkan warning
             passwordWrong = false;
 
-            // Function to derive a key from the user's password
-            function deriveKeyFromPassword(password, salt) {
-                return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
-            }
-
-            function decryptPrivateKey(encryptedPrivateKey, password, salt) {
-                try {
-                    // Convert the salt from a Buffer to a string
-                    const saltBuffer = Buffer.from(salt, 'base64');
-                    console.log("Salt buffer " + saltBuffer.toString());
-                    
-                    const key = deriveKeyFromPassword(password, saltBuffer);
-                    console.log('Derived Key:', key.toString('base64'));
-                    
-                    // Debugging: Log intermediate values
-                    console.log('Encrypted Private Key:', encryptedPrivateKey);
-                
-                    const decipher = crypto.createDecipheriv('aes-256-cbc', key, saltBuffer, Buffer.alloc(16, 0));
-
-                    let decryptedPrivateKey = decipher.update(encryptedPrivateKey, 'base64', 'utf-8');
-                    decryptedPrivateKey += decipher.final('utf-8');
-                
-                    return decryptedPrivateKey;
-                } catch (error) {
-                    console.error('Decryption Error:', error.message);
-                    throw error;
-                }
-            }
             
-            
-
-            // Later, when you need to use the private key
-            const decryptedPrivateKey = decryptPrivateKey(res_data.private_key, password_input, res_data.salt);
 
             // Function to create a digital signature
             function createDigitalSignature(data, privateKeyPem) {
@@ -256,11 +196,20 @@ app.post('/sign_doc', auth, (req,res) =>{
             }
 
             // Create a digital signature
-            const digitalSignature = createDigitalSignature(no_surat, decryptedPrivateKey);
+            const digitalSignature = createDigitalSignature(no_surat, res_data.private_key);
+
+            //hasil enkripsi
+            const signature = digitalSignature.signature;
+            //nomor surat
+            const data = digitalSignature.data;
+
+            // Masukan log signature ke database
+            insertSigLog(data, signature, current_date, req.session.id_user)
 
             res.render('hasil_sign', {
                 nama_lengkap: req.session.nama_lengkap || "",
-                digitalSignature: digitalSignature.signature
+                digitalSignature: digitalSignature.signature,
+                username: req.session.username
             })
         }
         //jika email dan/atau password salah
@@ -273,13 +222,61 @@ app.post('/sign_doc', auth, (req,res) =>{
 
 })
 
+app.get('/check_sign', (req, res)=>{
+    res.render('check_sign', {
+        id_user: req.session.id_user || 0,
+        nama_lengkap: req.session.nama_lengkap || "",
+    })
+})
+
+app.post('/check_sign', (req, res)=>{
+    let isiQR = req.body.isiQR;
+    let signed_by = isiQR.substring(10,14);
+    let digital_sig = isiQR.substring(18);
+
+    let public_key = getSignerPublicKey(signed_by);
+
+    // Function to verify a digital signature
+    function verifyDigitalSignature(data, signature, publicKeyPem) {
+        const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
+    
+        // Hash the data
+        const md = forge.md.sha256.create();
+        md.update(data, 'utf-8');
+        const hash = md.digest();
+    
+        // Decode the signature
+        const decodedSignature = forge.util.decode64(signature);
+    
+        // Verify the signature using the public key
+        const isValid = publicKey.verify(hash, decodedSignature);
+    
+        return isValid;
+    }
+
+    // Verify the digital signature
+    const isValidSignature = verifyDigitalSignature(
+        digitalSignature.data,
+        digitalSignature.signature,
+        userPublicKey
+    );
+    
+    console.log('Is Signature Valid?', isValidSignature);
+
+
+
+})
+
 app.get('/hasil_sign', auth, (req, res)=>{
     
 })
 
-app.get('/signature_log', (req, res)=>{
+app.get('/signature_log', auth, async(req, res)=> {
+    let sigLog = await getSigLog(req.session.id_user);
+    console.log(sigLog)
     res.render('signature_log', {
         nama_lengkap: req.session.nama_lengkap || "",
+        sigLog: sigLog
     })
 })
 

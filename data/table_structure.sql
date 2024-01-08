@@ -11,10 +11,9 @@ CREATE TABLE `User` (
   `id_user` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `nama_lengkap` varchar(50) NOT NULL,
   `username` varchar(3) NOT NULL,
-  `password` varchar(50) NOT NULL,
+  `password` varchar(500) NOT NULL,
   `private_key` TEXT,
   `public_key` TEXT,
-  `salt` VARBINARY(100),
   CONSTRAINT `UK_user` UNIQUE (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
@@ -22,7 +21,7 @@ CREATE TABLE `User` (
 CREATE TABLE `Digital_Signature` (
   `id_signature` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `no_surat` varchar(100) NOT NULL,
-  `hash_value` varchar(50) NOT NULL,
+  `hash_value` varchar(500) NOT NULL,
   `tanggal_ttd` DATE NOT NULL,
   `id_user` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;   

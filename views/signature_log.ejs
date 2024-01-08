@@ -20,12 +20,14 @@
                     <th id="log_hash">Teks <i>Signature</i></th>
                 </thead>
                 <tbody id="log_tab_row">
-                    <tr id="1">
-                        <td id="1">1</td>
-                        <td id="21/12/2023">21 Desember 2023</td>
-                        <td id="12345678">12345678</td>
-                        <td id="asdfghjkl">asdfghjkl</td>
-                    </tr>
+                    <% for (let i = 0; i < sigLog.length; i++) { %>
+                        <tr id="signatures">
+                            <td id="log_no"><%= i+1 %></td>
+                            <td id="log_tanggal"><%= sigLog[i].tanggal_ttd.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }); %></td>
+                            <td id="log_nomor"><%= sigLog[i].no_surat %></td>
+                            <td id="log_hash"><%= sigLog[i].hash_value %></td>
+                        </tr>
+                    <% } %>
                 </tbody>
             </table>
         </div>

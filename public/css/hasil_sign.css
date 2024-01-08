@@ -90,8 +90,9 @@ input[type="text"]{
     padding: 7px;
     background-color: #3969B3;
     border-radius: 15px;
-    width: 60px;
-    height: 20px;
+    width: 80px;
+    height: 35px;
     text-align: center;
     text-decoration: none;
+    border: none;
 }

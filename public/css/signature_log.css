@@ -56,18 +56,20 @@ html,body {
 th, td {
     padding: 5px; 
     border: 2px solid white;
+    word-wrap: break-word;
+    /* max-width: 200px; */
 }
 
 #log_no{
-    width: 15px;
+    max-width: 30px;
 }
 #log_tanggal{
-    width: 200px;
+    max-width: 200px;
 }
 
 #log_nomor{
-    width: 400px;
+    max-width: 400px;
 }
 #log_hash{
-    width: 400px;
+    max-width: 600px;
 }
