@@ -11,7 +11,7 @@
     <% if(id_user === 0){ %>
         <%- include('./layout/public_header.ejs') %>
     <% } else { %>
-    <!-- Jika page ini diakses oleh asdos (sudah login), tampilkan header asdos -->
+    <!-- Jika page ini diakses oleh user (sudah login), tampilkan header user -->
         <%- include('./layout/user_header.ejs') %>
     <% } %>
     <div id="outer">

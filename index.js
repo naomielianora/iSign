@@ -251,47 +251,58 @@ app.post('/check_sign', async(req, res)=>{
     console.log(signed_by);
     console.log(digital_sig);
     console.log(no_surat);
-    console.log(public_key[0].public_key);
+    console.log(public_key);
+    // console.log(public_key[0].public_key);
 
 
     // Function to verify a digital signature
     function verifyDigitalSignature(data, signature, publicKeyPem) {
-        const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
-    
-        // Hash the data
-        const md = forge.md.sha256.create();
-        md.update(data, 'utf-8');
-        const hash = md.digest();
+        try{
+            const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
+        
+            // Hash the data
+            const md = forge.md.sha256.create();
+            md.update(data, 'utf-8');
+            const hash = md.digest();
+        
+            // Decode the signature
+            const decodedSignature = forge.util.decode64(signature);
 
-        // const md = crypto.createHash('sha256').update(data).digest('base64');
+            console.log('Md:', md);
+            console.log('Hash:', hash);
+            console.log('Signature:', signature);
+            console.log('Decoded Signature:', forge.util.encode64(decodedSignature));
 
-    
-        // Decode the signature
-        const decodedSignature = forge.util.decode64(signature);
-
-        console.log('Md:', md);
-        console.log('Hash:', hash);
-        console.log('Signature:', signature);
-    console.log('Decoded Signature:', forge.util.encode64(decodedSignature));
-
-    
-        // Verify the signature using the public key
-        const isValid = publicKey.verify(md.digest().getBytes(), decodedSignature);
-    
-        return isValid;
+            // Verify the signature using the public key
+            const isValid = publicKey.verify(md.digest().getBytes(), decodedSignature);
+            return isValid;
+        }
+        catch (error) {
+            // inisial in QR is corrupted by other username that exist in db (the public key is not match)
+            console.error('Error verifying signature:', error.message);
+            return false; 
+        }
     }
+    let isValidSignature;
 
-    // Verify the digital signature
-    const isValidSignature = verifyDigitalSignature(
-        no_surat,
-        digital_sig,
-        public_key[0].public_key
-    );
+    // inisial in QR is corrupted by username that is not exist in db
+    if(public_key[0] == undefined){
+        isValidSignature = false
+    }else{
+        // Verify the digital signature
+        isValidSignature = verifyDigitalSignature(
+            no_surat,
+            digital_sig,
+            public_key[0].public_key
+        );
+    }
     
     console.log('Is Signature Valid?', isValidSignature);
-
-
-
+    if(isValidSignature){
+        //kirim data untuk pop up verified
+    }else{
+        //kirim data untuk pop up unverified
+    }
 })
 
 app.get('/hasil_sign', auth, (req, res)=>{
