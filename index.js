@@ -175,8 +175,6 @@ app.post('/sign_doc', auth, async(req,res) =>{
             //jangan tampilkan warning
             passwordWrong = false;
 
-            
-
             // Function to create a digital signature
             function createDigitalSignature(data, privateKeyPem) {
                 const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
@@ -185,6 +183,8 @@ app.post('/sign_doc', auth, async(req,res) =>{
                 const md = forge.md.sha256.create();
                 md.update(data, 'utf-8');
                 const hash = md.digest();
+                console.log(hash);
+                console.log(md);
             
                 // Sign the hash with the private key
                 const signature = privateKey.sign(md);
@@ -197,11 +197,14 @@ app.post('/sign_doc', auth, async(req,res) =>{
 
             // Create a digital signature
             const digitalSignature = createDigitalSignature(no_surat, res_data.private_key);
+            console.log(res_data.private_key);
 
             //hasil enkripsi
             const signature = digitalSignature.signature;
             //nomor surat
             const data = digitalSignature.data;
+            console.log(signature);
+            console.log(data);
 
             // Masukan log signature ke database
             insertSigLog(data, signature, current_date, req.session.id_user)
@@ -229,12 +232,20 @@ app.get('/check_sign', (req, res)=>{
     })
 })
 
-app.post('/check_sign', (req, res)=>{
+app.post('/check_sign', async(req, res)=>{
     let isiQR = req.body.isiQR;
     let signed_by = isiQR.substring(10,14);
     let digital_sig = isiQR.substring(18);
 
-    let public_key = getSignerPublicKey(signed_by);
+    let no_surat = req.body.no_surat;
+
+    let public_key = await getSignerPublicKey(signed_by);
+
+    console.log(signed_by);
+    console.log(digital_sig);
+    console.log(no_surat);
+    console.log(public_key[0].public_key);
+
 
     // Function to verify a digital signature
     function verifyDigitalSignature(data, signature, publicKeyPem) {
@@ -244,6 +255,8 @@ app.post('/check_sign', (req, res)=>{
         const md = forge.md.sha256.create();
         md.update(data, 'utf-8');
         const hash = md.digest();
+        console.log(hash);
+        console.log(md);
     
         // Decode the signature
         const decodedSignature = forge.util.decode64(signature);
@@ -256,9 +269,9 @@ app.post('/check_sign', (req, res)=>{
 
     // Verify the digital signature
     const isValidSignature = verifyDigitalSignature(
-        digitalSignature.data,
-        digitalSignature.signature,
-        userPublicKey
+        no_surat,
+        digital_sig,
+        public_key[0].public_key
     );
     
     console.log('Is Signature Valid?', isValidSignature);
@@ -273,9 +286,9 @@ app.get('/hasil_sign', auth, (req, res)=>{
 
 app.get('/signature_log', auth, async(req, res)=> {
     let sigLog = await getSigLog(req.session.id_user);
-    console.log(sigLog)
     res.render('signature_log', {
         nama_lengkap: req.session.nama_lengkap || "",
+        username: req.session.username,
         sigLog: sigLog
     })
 })

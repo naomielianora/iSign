@@ -1,6 +1,6 @@
 import { dbConnect } from "./connectionDB.js";
 
-//untuk mengambil data user yang memiliki email dan password yang sama dengan yang diinput user
+//untuk mengambil public key dari user yang ingin dicek ttdnya
 export const getSignerPublicKey = async(username) => {
     const conn = await dbConnect();
     return new Promise((resolve, reject) => {
@@ -48,18 +48,3 @@ export const getSigLog = async(id_user) => {
     });
 };
 
-//untuk mengambil semua history signature dari user
-export const getNoSurat = async(id_user) => {
-    const conn = await dbConnect();
-    return new Promise((resolve, reject) => {
-        conn.query('SELECT no_surat FROM digital_signature WHERE id_user = ?', [id_user], (err, result) => {
-            if(err){
-                reject (err);
-            }
-            else{
-                resolve(result);
-            }
-        });
-        conn.release();
-    });
-};

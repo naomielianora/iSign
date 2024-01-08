@@ -25,7 +25,7 @@
                             <td id="log_no"><%= i+1 %></td>
                             <td id="log_tanggal"><%= sigLog[i].tanggal_ttd.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }); %></td>
                             <td id="log_nomor"><%= sigLog[i].no_surat %></td>
-                            <td id="log_hash"><%= sigLog[i].hash_value %></td>
+                            <td id="log_hash">SIGNED BY <%- username %> FOR <%=sigLog[i].hash_value %></td>
                         </tr>
                     <% } %>
                 </tbody>
