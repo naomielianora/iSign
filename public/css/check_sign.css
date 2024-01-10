@@ -96,3 +96,47 @@ input[type="text"]{
     border: none;
 
 }
+
+
+.pop-up {
+    visibility:hidden;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.1);
+    z-index: 1000;
+    width: 400px;
+    background: white;
+    border-radius: 20px;
+    text-align: center;
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    font-weight: bold;
+    transition: transform 0.3s;
+    font-family: Regular;
+}
+
+.pop-up.show {
+    visibility:visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+.backPopup{
+    background-color: #3969B3;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    width: 70px;
+    height: 30px;
+}
+
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5); 
+    z-index: 999;
+}

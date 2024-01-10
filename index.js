@@ -68,11 +68,13 @@ app.post('/sign_up', function(req, res) {
     //password yang diinput user akan dihash menggunakan sha256
     let pass_input = req.body.pass_public;
     let password_sign_up = crypto.createHash('sha256').update(pass_input).digest('base64');
-    // Generate an RSA key pair
+
+    //GENERATE RSA KEY PAR FOR NEW USER
     const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
     const publicKey = forge.pki.publicKeyToPem(keyPair.publicKey);
     const privateKey = forge.pki.privateKeyToPem(keyPair.privateKey);
-    // // masukan ke database lalu apabila berhasil maka alihkan ke page konfirmasi
+
+    //masukan ke database lalu apabila berhasil maka alihkan ke page konfirmasi
     signUpUser(nama_lengkap_sign_up, username_sign_up, password_sign_up, privateKey, publicKey).then(() => 
         res.redirect('/sign_up_conf')
     )
@@ -82,7 +84,7 @@ app.get('/sign_up_conf', (req, res)=>{
     res.render('sign_up_conf')
 })
 
-//AJAX (mengecek apakah username yg diinput user sudah ada di database)
+//untuk mengecek apakah username yg diinput user sudah ada di database
 app.get('/check_username', (req, res) => {
     const inputed_username = req.query.inputed_username;
     let usernameTaken = true;
@@ -146,9 +148,7 @@ app.get('/log_out', (req, res) => {
             res.render('log_out')
         }
     });
-  })
-
-
+})
 
 
 let passwordWrong = false;
@@ -161,14 +161,16 @@ app.get('/form_sign', auth, (req, res)=>{
     passwordWrong = false;
 })
 
-const current_date = new Date().toISOString().slice(0, 10); //contoh output: 2023-12-25
+//untuk mengambil tanggal saat ini
+const current_date = new Date().toISOString().slice(0, 10);
 
 app.post('/sign_doc', auth, async(req,res) =>{
+    //ambil nilai" yang diinput oleh user
     let no_surat = req.body.no_surat;
-    console.log(no_surat);
     let signedby = req.body.signedby;
     let password_input = req.body.password
     let password = crypto.createHash('sha256').update(password_input).digest('base64');
+    //cek apakah password yang diinput benar
     getUserData(signedby, password).then((data) => {
         let res_data = JSON.parse(JSON.stringify(data))[0];
         //jika username&pass benar (ada data yang dikembalikan)
@@ -176,46 +178,38 @@ app.post('/sign_doc', auth, async(req,res) =>{
             //jangan tampilkan warning
             passwordWrong = false;
 
-            // Function to create a digital signature
+            //CREATE DIGITAL SIGNATURE
             function createDigitalSignature(data, privateKeyPem) {
+                //private key user
                 const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
             
-                // Hash the data
+                //hash data berupa no surat dengan sha 256
                 const md = forge.md.sha256.create();
                 md.update(data, 'utf-8');
                 const hash = md.digest();
 
-        // const md = crypto.createHash('sha256').update(data).digest('base64');
-        
-
-            
-                // Sign the hash with the private key
+                //buat signature dari hasil hash tsb dan dienkripsi dengan private key user
                 const signature = privateKey.sign(md);
-
-                console.log('Md:', md);
-                console.log('Hash:', hash);
-        console.log('Signature:', forge.util.encode64(signature));
-            
+                
+                //kembalikan data(no surat) dan digital signaturenya
                 return {
                 data,
                 signature: forge.util.encode64(signature),
                 };
             }
 
-            // Create a digital signature
+            //masukan data ke method
             const digitalSignature = createDigitalSignature(no_surat, res_data.private_key);
-            console.log(res_data.private_key);
 
-            //hasil enkripsi
+            //ambil digital signature dari hasil method
             const signature = digitalSignature.signature;
-            //nomor surat
+            //ambil data yaitu no surat dari hasil method
             const data = digitalSignature.data;
-            console.log(signature);
-            console.log(data);
 
-            // Masukan log signature ke database
+            //masukan data ke signature log
             insertSigLog(data, signature, current_date, req.session.id_user)
 
+            //tampilkan hasil ke user
             res.render('hasil_sign', {
                 nama_lengkap: req.session.nama_lengkap || "",
                 digitalSignature: digitalSignature.signature,
@@ -225,7 +219,7 @@ app.post('/sign_doc', auth, async(req,res) =>{
         //jika email dan/atau password salah
         else {
             passwordWrong = true;
-          res.redirect('/form_sign');
+            res.redirect('/form_sign');
         }
     });
     
@@ -240,52 +234,45 @@ app.get('/check_sign', (req, res)=>{
 })
 
 app.post('/check_sign', async(req, res)=>{
+    //ambil isi QR yang diinput
     let isiQR = req.body.isiQR;
+    //ambil username yang ada di QR (siapa yang ttd)
     let signed_by = isiQR.substring(10,14);
+    //ambil digital signature yang ada di QR
     let digital_sig = isiQR.substring(18);
 
+    //ambil no surat yang diinput
     let no_surat = req.body.no_surat;
 
+    //ambil public key dari username yang tertera di QR
     let public_key = await getSignerPublicKey(signed_by);
 
-    console.log(signed_by);
-    console.log(digital_sig);
-    console.log(no_surat);
-    console.log(public_key);
-    // console.log(public_key[0].public_key);
-
-
-    // Function to verify a digital signature
+    //VERIFY DIGITAL SIGNATURE
     function verifyDigitalSignature(data, signature, publicKeyPem) {
         try{
+            //public key user yang username nya terdapat di QR
             const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
         
-            // Hash the data
+            //hash no surat dengan sha256
             const md = forge.md.sha256.create();
             md.update(data, 'utf-8');
             const hash = md.digest();
         
-            // Decode the signature
+            //decode signature
             const decodedSignature = forge.util.decode64(signature);
 
-            console.log('Md:', md);
-            console.log('Hash:', hash);
-            console.log('Signature:', signature);
-            console.log('Decoded Signature:', forge.util.encode64(decodedSignature));
-
-            // Verify the signature using the public key
+            //Verify signature menggunakan public key (akan return true jika valid dan false jika tidak valid)
             const isValid = publicKey.verify(md.digest().getBytes(), decodedSignature);
             return isValid;
         }
         catch (error) {
-            // inisial in QR is corrupted by other username that exist in db (the public key is not match)
-            console.error('Error verifying signature:', error.message);
+            // jika QR is corrupted by other username that exist in db (the public key is not match)
             return false; 
         }
     }
     let isValidSignature;
 
-    // inisial in QR is corrupted by username that is not exist in db
+    // jika QR is corrupted by username that does not exist in db
     if(public_key[0] == undefined){
         isValidSignature = false
     }else{
@@ -297,16 +284,8 @@ app.post('/check_sign', async(req, res)=>{
         );
     }
     
-    console.log('Is Signature Valid?', isValidSignature);
-    if(isValidSignature){
-        //kirim data untuk pop up verified
-    }else{
-        //kirim data untuk pop up unverified
-    }
-})
-
-app.get('/hasil_sign', auth, (req, res)=>{
-    
+    //kirim data ke client apakah signature valid atau tidak dan tampilkan pop up yang sesuai
+    res.json({ PopUpValid: isValidSignature });
 })
 
 app.get('/signature_log', auth, async(req, res)=> {
@@ -317,23 +296,3 @@ app.get('/signature_log', auth, async(req, res)=> {
         sigLog: sigLog
     })
 })
-
-
-
-
-// console.log('Encrypted Data:', forge.util.encode64(encryptedData));
-
-// // Decrypt using the private key
-// const decryptedData = forge.pki.privateKeyFromPem(privateKey).decrypt(encryptedData, 'RSA-OAEP');
-// console.log('Decrypted Data:', decryptedData);
-
-//   // Example usage
-//   const userPassword = 'user-password';
-  
-  
-//   // Store encryptedPrivateKey, salt, and publicKey in the database
-  
-  
-  
-//   console.log('Decrypted Private Key:', decryptedPrivateKey);
-//   console.log('Public Key:', publicKey);
