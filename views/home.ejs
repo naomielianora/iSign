@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>ISIGN_HEADER</title>
+	<link rel="stylesheet" type="text/css" href="/css/home.css">
+</head>
+
+<body>
+    <!-- Jika page ini diakses oleh user blm login, tampilkan header public -->
+    <% if(id_user === 0){ %>
+        <%- include('./layout/public_header.ejs') %>
+    <% } else { %>
+    <!-- Jika page ini diakses oleh asdos (sudah login), tampilkan header asdos -->
+        <%- include('./layout/user_header.ejs') %>
+    <% } %>
+
+    <div id="home-content">
+        <div id="container">
+            <div class = "content">
+                <img src="/assets/check.png">
+                <a href="/check_sign" id="check">Check a Signature</a>
+            </div>
+            <div class = "content">
+                <img src="/assets/sign.png">
+                <!-- Jika page ini diakses oleh user blm login, maka akan dialihkan ke halaman login -->
+                <% if(id_user === 0){ %>
+                    <a href="/log_in" id="sign">Sign a Document</a>
+                <% } else { %>
+                <!-- Jika page ini diakses oleh asdos (sudah login), dialihkan ke page untuk sign document -->
+                        <a href="/form_sign" id="sign">Sign a Document</a>
+                <% } %>
+                
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>
+

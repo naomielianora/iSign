@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISIGN_SIGNATURE_LOG</title>
+    <link rel="stylesheet" type="text/css" href="/css/signature_log.css">
+</head>
+<body>
+    <%- include('./layout/user_header.ejs') %>
+    <div id="log_content">
+        <h1 id="log">Your Signature Log</h1>
+        <div id="log_content">
+            <table id="log_tab">
+                <thead id="log_tab_head">
+                    <th id="log_no">No.</th>
+                    <th id="log_tanggal">Tanggal</th>
+                    <th id="log_nomor">Nomor Surat</th>
+                    <th id="log_hash">Teks <i>Signature</i></th>
+                </thead>
+                <tbody id="log_tab_row">
+                    <% for (let i = 0; i < sigLog.length; i++) { %>
+                        <tr id="signatures">
+                            <td id="log_no"><%= i+1 %></td>
+                            <td id="log_tanggal"><%= sigLog[i].tanggal_ttd.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }); %></td>
+                            <td id="log_nomor"><%= sigLog[i].no_surat %></td>
+                            <td id="log_hash">SIGNED BY <%- username %> FOR <%=sigLog[i].hash_value %></td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

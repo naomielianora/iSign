@@ -1,0 +1,142 @@
+html, body{
+    height: 100%;
+    weight: 100%;
+    background-color: #366AB2;
+    padding: 0;
+    margin: 0;
+}
+
+@font-face {
+    font-family: Bold;
+    src: url("../font/Poppins-Bold.ttf");
+}
+
+@font-face {
+    font-family: SemiBold;
+    src: url("../font/Poppins-SemiBold.ttf");
+}
+
+@font-face {
+    font-family: Regular;
+    src: url("../font/Poppins-Regular.ttf");
+}
+
+#signup{
+    color: #D7E9FF;
+    font-family: Bold;
+}
+
+.navigator_sign_up {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+#logo_signup{
+    height:100px;
+}
+
+.content_sign_up {
+    background-color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    border-radius: 15px;
+    flex-direction: column;
+}
+
+.input_fullname_signup {
+    background-color: #E9E9E9;
+    color: black;
+    border: none;
+    font-size: 16px;
+    width: 350px;
+    height: 25px;
+    padding: 8px;
+    border-radius: 8px;
+    font-family: Regular;
+}
+
+.input_username_signup {
+    background-color: #E9E9E9;
+    color: black;
+    border: none;
+    font-size: 16px;
+    width: 350px;
+    height: 25px;
+    padding: 8px;
+    border-radius: 8px;
+    font-family: Regular;
+}
+
+.warning{
+    color: red;
+    font-size: 13px;
+    font-family: Regular;
+}
+
+.hidden{
+    display: none;
+}
+
+.input_pass_signup {
+    background-color: #E9E9E9;
+    grid-row: 4;
+    color: black;
+    border: none;
+    font-size: 16px;
+    width: 350px;
+    height: 25px;
+    padding: 8px;
+    border-radius: 8px;
+    font-family: Regular;
+}
+
+.input_pass_conf_signup{
+    background-color: #E9E9E9;
+    grid-row: 5;
+    color: black;
+    border: none;
+    font-size: 16px;
+    width: 350px;
+    height: 25px;
+    padding: 8px;
+    border-radius: 8px;
+    font-family: Regular;
+}
+
+.user::placeholder,
+.pw::placeholder {
+    font-family: Semibold;
+}
+
+.content_sign_up .blue_button {
+    grid-row: 6;
+    justify-self: center;
+}
+
+.blue_button{
+    background-color: #3969B3;
+    border: none;
+    font-family: Regular;
+    width: 160px;
+    color: #FFFFFF;
+    padding: 5px;
+    border-radius: 8px;
+}
+
+.already_account {
+    padding-top: 5px;
+    color: #D7E9FF;
+    font-family: SemiBold;
+
+}
+
+.log_in{
+    color: white;
+}

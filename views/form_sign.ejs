@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iSign</title>
+    <link rel="stylesheet" type="text/css" href="/css/form_sign.css">
+</head>
+<body>
+    <%- include('./layout/user_header.ejs') %>
+    <div id="outer">
+        <div id="all">
+            <h1> Sign a Document</h1>
+            <div id="box">
+                
+                <form method = "POST" action = "/sign_doc">
+                    <div id = "form-content">
+                        <label for="nosu" class = "nosu_label">No. Surat</label>
+                        <input type="text" name="no_surat" id="nosu" class = "input_nosu"required>
+
+                        <label for="signedby" class = "signedby_label"><i>Signed by</i></label>
+                        <input type="text" name="signedby" id="signedby" class = "input_signedby" value = <%- username %> readonly>
+
+                        <label for="password" class = "password_label">Password</label>
+                        <input type="password" name="password" id="password" class = "input_password"required>
+
+                        
+                    </div>
+                    <% if (passwordWrong) { %>
+                        <div class = "password_warning">
+                            *Wrong password
+                        </div>
+                    <% }%>
+                    
+
+                    <button id="signButton">SIGN</button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</body>
+</html>

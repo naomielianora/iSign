@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISIGN_LOG_IN</title>
+    <link rel="stylesheet" type="text/css" href="/css/log_in.css">
+</head>
+<body>
+    <div class = "navigator_log_in">
+
+        <a href = "/"><img id = "logo_signup" src = "/assets/logo login_2.png" alt = "login_logo"></a>
+        <h1 id = "login">Log In</h1>
+        <form method = "POST" action = "/log_in">
+            <div class = "content_log_in">
+                <input type="text" class = "input_username_public" name = "username_public" placeholder="Username (3 Capital Letter)" required>
+                <input type="password" class = "input_pass_public" name = "pass_public" placeholder="Password" required>
+                <button class = "blue_button">Log in</button>
+
+                <% if (showAlert) { %>
+                    <div class = "login_warning">
+                        *Wrong email and/or password, please try again
+                    </div>
+                <% }%>
+            </div>    
+        </form>
+        
+        <div class = "create_account">
+            Create an account? <a href="/sign_up" class = "sign_up">Sign Up</a>
+        </div>
+</body>
+</html>

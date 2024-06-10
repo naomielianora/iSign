@@ -1,0 +1,75 @@
+@font-face {
+    font-family: Bold;
+    src: url("../font/Poppins-Bold.ttf");
+}
+
+@font-face {
+    font-family: SemiBold;
+    src: url("../font/Poppins-SemiBold.ttf");
+}
+
+@font-face {
+    font-family: Regular;
+    src: url("../font/Poppins-Regular.ttf");
+}
+
+html,body {
+    background-color: #366AB2;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+#log_content{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: Semibold;
+    color: white;
+}
+
+#log{
+    margin: 10px; 
+}
+
+#log_tab{
+    border-color: white;
+    text-align: center; 
+    margin: 10px; 
+    border-collapse: collapse;
+    border-spacing: 0;
+    width: 100%;
+}
+
+#log_tab_head{
+    font-family: Bold;
+    background-color: #1A2C56;
+}
+
+#log_tab_row{
+    font-family: Regular;
+    background-color: #366ab2;
+}
+
+th, td {
+    padding: 5px; 
+    border: 2px solid white;
+    word-wrap: break-word;
+    /* max-width: 200px; */
+}
+
+#log_no{
+    max-width: 30px;
+}
+#log_tanggal{
+    max-width: 200px;
+}
+
+#log_nomor{
+    max-width: 400px;
+}
+#log_hash{
+    max-width: 600px;
+}

@@ -1,0 +1,55 @@
+@font-face {
+    font-family: Bold;
+    src: url("../font/Poppins-Bold.ttf");
+}
+
+@font-face {
+    font-family: SemiBold;
+    src: url("../font/Poppins-SemiBold.ttf");
+}
+
+@font-face {
+    font-family: Regular;
+    src: url("../font/Poppins-Regular.ttf");
+}
+
+html,body {
+    background-color: #366AB2;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-family: Semibold;
+}
+
+#logout_content{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#logo_logout{
+    height: 100px;
+}
+
+#logout{
+    margin-top: 0;
+    margin-bottom: 30px;
+    color: white;
+}
+
+#back_home{
+    color: white;
+    padding: 7px;
+    background-color: #1A2C56;
+    border-radius: 15px;
+    width: 200px;
+    text-align: center;
+    text-decoration: none;
+}
+

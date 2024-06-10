@@ -1,0 +1,128 @@
+html, body{
+    height: 100%;
+    weight: 100%;
+    background-color: #366AB2;
+    padding: 0;
+    margin:0;
+}
+
+@font-face {
+    font-family: Bold;
+    src: url("../font/Poppins-Bold.ttf");
+}
+
+@font-face {
+    font-family: SemiBold;
+    src: url("../font/Poppins-SemiBold.ttf");
+}
+
+@font-face {
+    font-family: Regular;
+    src: url("../font/Poppins-Regular.ttf");
+}
+
+#login{
+    color: #D7E9FF;
+    font-family: Bold;
+}
+
+h2{
+    color: #1A2C56;
+    font-family: Regular;
+    text-align: center;
+}
+
+.content_sign_up_conf{
+    background-color: #FFFFFF;
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    border-radius: 15px;
+    align-items: center;
+    width: 400px;
+    flex-direction: column;
+
+}
+
+.login_warning{
+    color: red;
+    font-size: 13px;
+    font-family: Regular;
+}
+
+.navigator_log_in {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+#logo_login{
+    height:100px;
+}
+
+.content_log_in {
+    background-color: #FFFFFF;
+    display: grid;
+    gap: 15px;
+    padding: 15px;
+    border-radius: 15px;
+}
+
+.input_username_public {
+    background-color: #E9E9E9;
+    grid-row: 1;
+    color: #474747;
+    border: none;
+    font-size: 16px;
+    width: 350px;
+    height: 25px;
+    padding: 8px;
+    border-radius: 8px;
+    font-family: Regular;
+}
+
+.input_pass_public {
+    background-color: #E9E9E9;
+    grid-row: 2;
+    color: #474747;
+    border: none;
+    font-size: 16px;
+    width: 350px;
+    height: 25px;
+    padding: 8px;
+    border-radius: 8px;
+    font-family: Regular;
+}
+
+.user::placeholder,
+.pw::placeholder {
+    font-family: Semibold;
+}
+
+.content_log_in .blue_button {
+    grid-row: 3;
+    justify-self: center;
+}
+
+.blue_button{
+    background-color: #3969B3;
+    border: none;
+    font-family: Regular;
+    width: 160px;
+    color: #FFFFFF;
+    padding: 5px;
+    border-radius: 8px;
+}
+
+.create_account {
+    padding-top: 5px;
+    color: #D7E9FF;
+    font-family: SemiBold;
+}
+
+.sign_up{
+    color: white;
+}

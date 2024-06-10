@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISIGN_SIGN_UP</title>
+    <link rel="stylesheet" type="text/css" href="/css/sign_up.css">
+    <script type="text/javascript" src="js/sign_up.js" defer></script>
+</head>
+<body>
+    <div class = "navigator_sign_up">
+        <a href = "/"><img id = "logo_signup" src = "/assets/logo login_2.png" alt = "login_logo"></a>
+        
+        <h1 id = "signup">Sign Up</h1>
+        <form method = "POST" action = "/sign_up">
+            <div class = "content_sign_up">
+                <input type="text" class = "input_fullname_signup" name = "fullname_public" placeholder="Full Name" id = "nama_lengkap" required>
+
+                <input type="text" class = "input_username_signup" name = "username_public" placeholder="Username (3 Capital Letters)" id = "username" required>
+
+                <div class = "warning hidden" id = "username_warning_same">
+                    *Username is already taken, please use another username
+                </div>
+
+                <div class = "warning hidden" id = "username_warning_capital">
+                    *Username has to be capital letters
+                </div>
+
+                <div class = "warning hidden" id = "username_warning_three">
+                    *Username has to be three capital letters
+                </div>
+                
+                <input type="password" class = "input_pass_signup" name = "pass_public" placeholder="Password" id = "password" required>
+
+                <input type="password" class = "input_pass_conf_signup" name = "conf_pass_public" id = "confirm_password" placeholder="Confirm Password" required>
+
+                <div class = "warning hidden" id = "password_warning">
+                    *password is not the same
+                </div>
+
+                <button class = "blue_button" id = 'submit_button'>Sign Up</button>
+
+                <div class = "warning hidden" id = "submit_warning">
+                    *please make sure all input is valid
+                </div>
+            </div>    
+        </form>
+        
+        <div class = "already_account">
+            Already have an account? <a href="/log_in" class = "log_in">Log In</a>
+    </div>
+</body>
+</html>
