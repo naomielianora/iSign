@@ -14,6 +14,8 @@ CREATE TABLE `User` (
   `password` varchar(500) NOT NULL,
   `private_key` TEXT,
   `public_key` TEXT,
+  `salt` varchar(32) NOT NULL,
+  `iv` varchar(32) NOT NULL,
   CONSTRAINT `UK_user` UNIQUE (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 

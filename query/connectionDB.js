@@ -5,7 +5,7 @@ import mysql from 'mysql'
 const pool = mysql.createPool({
     user: 'root',
     password: '',
-    database: 'isign',
+    database: 'penelitian',
     host: 'localhost'
   
 });

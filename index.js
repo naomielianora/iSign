@@ -74,10 +74,33 @@ app.post('/sign_up', function(req, res) {
     const publicKey = forge.pki.publicKeyToPem(keyPair.publicKey);
     const privateKey = forge.pki.privateKeyToPem(keyPair.privateKey);
 
+    // Function to derive a key from the user's password
+    function deriveKeyFromPassword(password, salt) {
+        return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
+    }
+
+    // Function to encrypt the private key using the user's password
+    function encryptPrivateKey(privateKey, password) {
+        const iv = crypto.randomBytes(16); // Initialization vector
+        const salt = crypto.randomBytes(16); // Salt for key derivation
+        const key = deriveKeyFromPassword(password, salt);
+
+        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+        let encryptedPrivateKey = cipher.update(privateKey, 'utf-8', 'base64');
+        encryptedPrivateKey += cipher.final('base64');
+
+        return {
+            encryptedPrivateKey,
+            salt: salt.toString('base64'),
+            iv: iv.toString('base64')
+        };
+    }
+
+    const { encryptedPrivateKey, salt, iv } = encryptPrivateKey(privateKey, pass_input);
+
     //masukan ke database lalu apabila berhasil maka alihkan ke page konfirmasi
-    signUpUser(nama_lengkap_sign_up, username_sign_up, password_sign_up, privateKey, publicKey).then(() => 
-        res.redirect('/sign_up_conf')
-    )
+    signUpUser(nama_lengkap_sign_up, username_sign_up, password_sign_up, encryptedPrivateKey, publicKey, salt, iv)
+        .then(() => res.redirect('/sign_up_conf'));
 })
 
 app.get('/sign_up_conf', (req, res)=>{
@@ -178,6 +201,26 @@ app.post('/sign_doc', auth, async(req,res) =>{
             //jangan tampilkan warning
             passwordWrong = false;
 
+            // Function to derive a key from the user's password
+            function deriveKeyFromPassword(password, salt) {
+                return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
+            }
+
+            // Function to decrypt the private key using the user's password
+            function decryptPrivateKey(encryptedPrivateKey, password, salt, iv) {
+                const saltBuffer = Buffer.from(salt, 'base64');
+                const ivBuffer = Buffer.from(iv, 'base64');
+                const key = deriveKeyFromPassword(password, saltBuffer);
+
+                const decipher = crypto.createDecipheriv('aes-256-cbc', key, ivBuffer);
+                let decryptedPrivateKey = decipher.update(encryptedPrivateKey, 'base64', 'utf-8');
+                decryptedPrivateKey += decipher.final('utf-8');
+
+                return decryptedPrivateKey;
+            }
+
+            const decryptedPrivateKey = decryptPrivateKey(res_data.private_key, password_input, res_data.salt, res_data.iv);
+
             //CREATE DIGITAL SIGNATURE
             function createDigitalSignature(data, privateKeyPem) {
                 //private key user
@@ -193,13 +236,13 @@ app.post('/sign_doc', auth, async(req,res) =>{
                 
                 //kembalikan data(no surat) dan digital signaturenya
                 return {
-                data,
-                signature: forge.util.encode64(signature),
+                    data,
+                    signature: forge.util.encode64(signature),
                 };
             }
 
             //masukan data ke method
-            const digitalSignature = createDigitalSignature(no_surat, res_data.private_key);
+            const digitalSignature = createDigitalSignature(no_surat, decryptedPrivateKey);
 
             //ambil digital signature dari hasil method
             const signature = digitalSignature.signature;
