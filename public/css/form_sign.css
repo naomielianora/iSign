@@ -109,3 +109,9 @@ input[type="password"]{
     font-size: 13px;
     font-family: Regular;
 }
+
+.signed_warning{
+    color: red;
+    font-size: 13px;
+    font-family: Regular;
+}

@@ -48,3 +48,18 @@ export const getSigLog = async(id_user) => {
     });
 };
 
+//untuk mengecek apakah user tsb sudah pernah sign document yg sama
+export const checkSignature = async(id_user, no_surat) => {
+    const conn = await dbConnect();
+    return new Promise((resolve, reject) => {
+        conn.query('SELECT * FROM digital_signature WHERE id_user = ? AND no_surat = ?', [id_user, no_surat], (err, result) => {
+            if(err){
+                reject (err);
+            }
+            else{
+                resolve(result);
+            }
+        });
+        conn.release();
+    });
+};

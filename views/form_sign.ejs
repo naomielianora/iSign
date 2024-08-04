@@ -31,6 +31,12 @@
                             *Wrong password
                         </div>
                     <% }%>
+
+                    <% if (hasSigned) { %>
+                        <div class = "signed_warning">
+                            *You have signed this document before
+                        </div>
+                    <% }%>
                     
 
                     <button id="signButton">SIGN</button>

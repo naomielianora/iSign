@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iSign</title>
+    <link rel="stylesheet" type="text/css" href="/css/check_sign.css">
+    <script type="text/javascript" src="js/check_sign.js" defer></script>
+</head>
+<body>
+    <div class="overlay"></div>
+
+    <!-- POP UP VERIFIED -->
+    <div id = "pop-up-verified" class = "pop-up">
+        <img src = "/assets/verified.png" width = 100px>
+        <p>Verified</p>
+        <button type="button" class="backPopup" id = "verified-back">Back</button>
+    </div>
+
+    <!-- POP UP NOT VERIFIED -->
+    <div id = "pop-up-not-verified" class = "pop-up">
+        <img src = "/assets/not-verified.png" width = 100px>
+        <p>Not Verified</p>
+        <button type="button" class="backPopup" id = "not-verified-back">Back</button>
+    </div>
+
+    <!-- Jika page ini diakses oleh user blm login, tampilkan header public -->
+    <% if(id_user === 0){ %>
+        <%- include('./layout/public_header.ejs') %>
+    <% } else { %>
+    <!-- Jika page ini diakses oleh user (sudah login), tampilkan header user -->
+        <%- include('./layout/user_header.ejs') %>
+    <% } %>
+
+    <div id="outer">
+        <div id="all">
+            <h1> Check a Document</h1>
+            
+                <form>
+                    <div id="box">
+                        <div id="content">
+                            <label for="isiQR" class = "isiQR_label">Isi QR</label>
+                            <input type="text" name="isiQR" id="isiQR" class = "input_isiQR"required>
+                            <label for="isi_doc" class = "no_surat_label">Isi Dokumen</label>
+                            <input type="text" name="isi_doc" id="isi_doc" class = "input_no_surat" required>
+                        </div>
+                        
+                        <div id="checkButtonDiv">
+                            <button id="checkButton" type = "button">CHECK</button>
+                        </div>
+                    </div>
+                    
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

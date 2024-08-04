@@ -9,7 +9,7 @@ const app = express();
 
 import { usernameChecker, signUpUser } from "./query/querySignUp.js";
 import { getUserData } from "./query/queryLogin.js";
-import { getSignerPublicKey, insertSigLog, getSigLog } from "./query/queryUser.js";
+import { getSignerPublicKey, insertSigLog, getSigLog, checkSignature } from "./query/queryUser.js";
 
 app.listen(PORT, () => {
     console.log(`Server is ready, listening on port ${PORT}`);
@@ -74,19 +74,37 @@ app.post('/sign_up', function(req, res) {
     const publicKey = forge.pki.publicKeyToPem(keyPair.publicKey);
     const privateKey = forge.pki.privateKeyToPem(keyPair.privateKey);
 
-    // Function to derive a key from the user's password
+    // Function to derive a key from the user's password. The derived key is used to encrypt the private key securely.
     function deriveKeyFromPassword(password, salt) {
+        // password: The user's password.
+        // salt: A random value added to the password before hashing to ensure unique keys for identical passwords.
+        // PBKDF2: The function uses the Password-Based Key Derivation Function 2 (PBKDF2) algorithm.
+        // Iterations: 100,000 iterations. This makes it computationally expensive for attackers to try brute-forcing the password.
+        // Key Length: 32 bytes (256 bits) is the length of the derived key.
+        // Digest Algorithm: SHA-256 is used for hashing.
         return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
     }
 
     // Function to encrypt the private key using the user's password
     function encryptPrivateKey(privateKey, password) {
+        //Purpose: IV (Initialization Vector) is a random value used to ensure that identical plaintexts encrypt to different ciphertexts. This prevents attackers from inferring relationships between identical blocks of plaintext. Length: 16 bytes (128 bits)
         const iv = crypto.randomBytes(16); // Initialization vector
+        //Purpose: The derived key is used for the encryption process. It is unique for each combination of password and salt.
         const salt = crypto.randomBytes(16); // Salt for key derivation
+
         const key = deriveKeyFromPassword(password, salt);
 
         const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+        //Algorithm: AES-256-CBC (Advanced Encryption Standard with 256-bit key size and Cipher Block Chaining mode).
+        // Key: The derived key.
+        // IV: The initialization vector.
+
         let encryptedPrivateKey = cipher.update(privateKey, 'utf-8', 'base64');
+        // cipher.update: Encrypts the data (private key).
+        // privateKey: The plaintext private key.
+        // utf-8: The encoding of the input data.
+        // base64: The encoding of the output data.
+
         encryptedPrivateKey += cipher.final('base64');
 
         return {
@@ -117,7 +135,7 @@ app.get('/check_username', (req, res) => {
             taken: usernameTaken
           };
           
-          res.json(response);
+        res.json(response);
     });
   })
 
@@ -175,13 +193,16 @@ app.get('/log_out', (req, res) => {
 
 
 let passwordWrong = false;
+let hasSigned = false;
 app.get('/form_sign', auth, (req, res)=>{
     res.render('form_sign', {
         nama_lengkap: req.session.nama_lengkap || "",
         username : req.session.username,
-        passwordWrong: passwordWrong
+        passwordWrong: passwordWrong,
+        hasSigned: hasSigned
     })
     passwordWrong = false;
+    hasSigned = false;
 })
 
 //untuk mengambil tanggal saat ini
@@ -193,80 +214,96 @@ app.post('/sign_doc', auth, async(req,res) =>{
     let signedby = req.body.signedby;
     let password_input = req.body.password
     let password = crypto.createHash('sha256').update(password_input).digest('base64');
-    //cek apakah password yang diinput benar
-    getUserData(signedby, password).then((data) => {
-        let res_data = JSON.parse(JSON.stringify(data))[0];
-        //jika username&pass benar (ada data yang dikembalikan)
-        if (res_data !== undefined) {
-            //jangan tampilkan warning
-            passwordWrong = false;
 
-            // Function to derive a key from the user's password
-            function deriveKeyFromPassword(password, salt) {
-                return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
-            }
-
-            // Function to decrypt the private key using the user's password
-            function decryptPrivateKey(encryptedPrivateKey, password, salt, iv) {
-                const saltBuffer = Buffer.from(salt, 'base64');
-                const ivBuffer = Buffer.from(iv, 'base64');
-                const key = deriveKeyFromPassword(password, saltBuffer);
-
-                const decipher = crypto.createDecipheriv('aes-256-cbc', key, ivBuffer);
-                let decryptedPrivateKey = decipher.update(encryptedPrivateKey, 'base64', 'utf-8');
-                decryptedPrivateKey += decipher.final('utf-8');
-
-                return decryptedPrivateKey;
-            }
-
-            const decryptedPrivateKey = decryptPrivateKey(res_data.private_key, password_input, res_data.salt, res_data.iv);
-
-            //CREATE DIGITAL SIGNATURE
-            function createDigitalSignature(data, privateKeyPem) {
-                //private key user
-                const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
-            
-                //hash data berupa no surat dengan sha 256
-                const md = forge.md.sha256.create();
-                md.update(data, 'utf-8');
-                const hash = md.digest();
-
-                //buat signature dari hasil hash tsb dan dienkripsi dengan private key user
-                const signature = privateKey.sign(md);
-                
-                //kembalikan data(no surat) dan digital signaturenya
-                return {
-                    data,
-                    signature: forge.util.encode64(signature),
-                };
-            }
-
-            //masukan data ke method
-            const digitalSignature = createDigitalSignature(no_surat, decryptedPrivateKey);
-
-            //ambil digital signature dari hasil method
-            const signature = digitalSignature.signature;
-            //ambil data yaitu no surat dari hasil method
-            const data = digitalSignature.data;
-
-            //masukan data ke signature log
-            insertSigLog(data, signature, current_date, req.session.id_user)
-
-            //tampilkan hasil ke user
-            res.render('hasil_sign', {
-                nama_lengkap: req.session.nama_lengkap || "",
-                digitalSignature: digitalSignature.signature,
-                username: req.session.username
-            })
-        }
-        //jika email dan/atau password salah
-        else {
-            passwordWrong = true;
+    //cek apakah user sudah pernah sign document yang sama
+    checkSignature(req.session.id_user, no_surat).then((signature) => {
+        console.log(signature.length);
+        console.log(signature.length > 1);
+        if(signature.length >= 1){
+            //tampilkan warning
+            hasSigned = true;
             res.redirect('/form_sign');
         }
-    });
-    
+        else{
+            //cek apakah password yang diinput benar
+            getUserData(signedby, password).then((data) => {
+            let res_data = JSON.parse(JSON.stringify(data))[0];
+            //jika username&pass benar (ada data yang dikembalikan)
+            if (res_data !== undefined) {
+                //jangan tampilkan warning
+                passwordWrong = false;
 
+                // Function to derive a key from the user's password
+                function deriveKeyFromPassword(password, salt) {
+                    return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
+                }
+
+                // Function to decrypt the private key using the user's password
+                function decryptPrivateKey(encryptedPrivateKey, password, salt, iv) {
+                    const saltBuffer = Buffer.from(salt, 'base64');
+                    const ivBuffer = Buffer.from(iv, 'base64');
+                    //Convert the base64-encoded salt and IV from the database back into their original binary forms.
+
+                    const key = deriveKeyFromPassword(password, saltBuffer);
+
+                    const decipher = crypto.createDecipheriv('aes-256-cbc', key, ivBuffer);
+                    let decryptedPrivateKey = decipher.update(encryptedPrivateKey, 'base64', 'utf-8');
+                    //Input Encoding: base64 is the encoding of the encrypted private key.
+                    //Output Encoding: utf-8 is the encoding of the decrypted private key.
+                    decryptedPrivateKey += decipher.final('utf-8');
+
+                    return decryptedPrivateKey;
+                }
+
+                const decryptedPrivateKey = decryptPrivateKey(res_data.private_key, password_input, res_data.salt, res_data.iv);
+
+                //CREATE DIGITAL SIGNATURE
+                function createDigitalSignature(data, privateKeyPem) {
+                    //private key user
+                    const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
+                
+                    //hash data berupa no surat dengan sha 256
+                    const md = forge.md.sha256.create();
+                    md.update(data, 'utf-8');
+                    const hash = md.digest();
+
+                    //buat signature dari hasil hash tsb dan dienkripsi dengan private key user
+                    const signature = privateKey.sign(md);
+                    
+                    //kembalikan data(no surat) dan digital signaturenya
+                    return {
+                        data,
+                        signature: forge.util.encode64(signature),
+                    };
+                }
+
+                //masukan data ke method
+                const digitalSignature = createDigitalSignature(no_surat, decryptedPrivateKey);
+
+                //ambil digital signature dari hasil method
+                const signature = digitalSignature.signature;
+                //ambil data yaitu no surat dari hasil method
+                const data = digitalSignature.data;
+
+                //masukan data ke signature log
+                insertSigLog(data, signature, current_date, req.session.id_user)
+
+                //tampilkan hasil ke user
+                res.render('hasil_sign', {
+                    nama_lengkap: req.session.nama_lengkap || "",
+                    digitalSignature: digitalSignature.signature,
+                    username: req.session.username
+                })
+            }
+            //jika email dan/atau password salah
+            else {
+                passwordWrong = true;
+                res.redirect('/form_sign');
+            }
+            });
+        }
+        
+    })
 })
 
 app.get('/check_sign', (req, res)=>{
@@ -329,6 +366,26 @@ app.post('/check_sign', async(req, res)=>{
     
     //kirim data ke client apakah signature valid atau tidak dan tampilkan pop up yang sesuai
     res.json({ PopUpValid: isValidSignature });
+})
+
+app.get('/check_doc', (req, res)=>{
+    res.render('check_doc', {
+        id_user: req.session.id_user || 0,
+        nama_lengkap: req.session.nama_lengkap || "",
+    })
+})
+
+app.post('/check_doc', async(req, res)=>{
+    //ambil isi QR yang diinput
+    let isiQR = req.body.isiQR;
+    //ambil username yang ada di QR (siapa yang ttd)
+    let signed_by = isiQR.substring(10,14);
+    //ambil digital signature yang ada di QR
+    let digital_sig = isiQR.substring(18);
+
+    //ambil no surat yang diinput
+    let no_surat = req.body.no_surat;
+    
 })
 
 app.get('/signature_log', auth, async(req, res)=> {
