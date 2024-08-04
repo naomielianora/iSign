@@ -35,13 +35,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    //ambil username yang diinput user
-    let usernameInput = document.getElementById('username');
-    //untuk mengecek apakah username yang diinput oleh user belum terdaftar di database
+    //ambil email yang diinput user
+    let emailInput = document.getElementById('email');
+    //untuk mengecek apakah email yang diinput oleh user belum terdaftar di database
     //menggunakan fecth API sehingga user tidak perlu submit terlebih dahulu untuk mengetahui
-    usernameInput.addEventListener('input', function () {
-      let usernameInput = this.value;
-      checkUsernameAvailability(usernameInput);
+    emailInput.addEventListener('input', function () {
+      let emailInput = this.value;
+      checkEmailAvailability(emailInput);
     });
 
 
@@ -77,51 +77,53 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 //mengirim email yg diinput ke server (index.js)
-async function checkUsernameAvailability(inputed_username) {
-    try {
-      const response = await fetch(`/check_username?inputed_username=${encodeURIComponent(inputed_username)}`);
-      
-      if (response.ok) {
-        const responseData = await response.json();
-        updateUsernameInput(responseData.taken === false, inputed_username.length == 3, inputed_username === inputed_username.toUpperCase());
-      } else {
-        console.error('Network response was not ok:', response.status, response.statusText);
-      }
-    } catch (error) {
-      console.error('Fetch error:', error);
-    }
-}
-
-
-function updateUsernameInput(usernameAvailable, isThreeLetters, isCapital) {
-    let usernameInput = document.getElementById('username');
-    let usernameWarning_same = document.getElementById('username_warning_same');
-    let usernameWarning_capital = document.getElementById('username_warning_capital');
-    let usernameWarning_three = document.getElementById('username_warning_three');
-    usernameWarning_same.classList.add("hidden");
-    usernameWarning_capital.classList.add("hidden");
-    usernameWarning_three.classList.add("hidden");
-    //jika username unik & terdiri dari 3 huruf, maka text input menjadi hijau (valid)
-    if (usernameAvailable && isThreeLetters && isCapital) {
-        usernameInput.style.backgroundColor = "green"
+async function checkEmailAvailability(inputed_email) {
+  try {
+    const response = await fetch(`/check_email?inputed_email=${encodeURIComponent(inputed_email)}`);
+    
+    if (response.ok) {
+      const responseData = await response.json();
+      let isValidEmail = validateEmail(inputed_email);
+      updateEmailInput(responseData.taken === false, isValidEmail);
     } else {
-        //jika email tidak unik, maka munculkan warning
-      if (!usernameAvailable) {
-        usernameWarning_same.classList.remove("hidden");
-      }
-      if(!isCapital){
-        usernameWarning_capital.classList.remove("hidden");
-      }
-
-      if(!isThreeLetters){
-        usernameWarning_three.classList.remove("hidden");
-      }
-        //text input menjadi merah (invalid)
-        usernameInput.style.backgroundColor = "red"
+      console.error('Network response was not ok:', response.status, response.statusText);
     }
-  
+  } catch (error) {
+    console.error('Fetch error:', error);
+  }
 }
 
+//untuk mengecek apakah benar" email yg diinput
+function validateEmail(email) {
+  //menggunakan regex untuk mengecek apakah email yg diinput sesuai dengan pattern sebuah email
+  let emailPattern = /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/;
+  return emailPattern.test(email);
+}
+
+function updateEmailInput(emailAvailable, isValidEmail) {
+  let emailInput = document.getElementById('email');
+  let emailWarning_taken = document.getElementById('email_warning_taken');
+  let emailWarning_notvalid = document.getElementById('email_warning_notvalid');
+  emailWarning_taken.classList.add("hidden");
+  emailWarning_notvalid.classList.add("hidden");
+  //jika email unik & sesuai dengan pattern email, maka text input menjadi hijau (valid)
+  if (emailAvailable && isValidEmail) {
+      emailInput.style.backgroundColor = "green"
+
+  } else {
+      //jika email tidak unik, maka munculkan warning
+    if (!emailAvailable) {
+      emailWarning_taken.classList.remove("hidden");
+    }
+    //jika email tidak valid, maka munculkan warning
+    if (!isValidEmail) {
+      emailWarning_notvalid.classList.remove("hidden");
+    }
+      //text input menjadi merah (invalid)
+      emailInput.style.backgroundColor = "red"
+  }
+
+}
 
 //untuk memeriksa apakah semua input sudah valid (berwarna hijau)
 function checkAllFieldsValid() {

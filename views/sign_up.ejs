@@ -17,18 +17,14 @@
             <div class = "content_sign_up">
                 <input type="text" class = "input_fullname_signup" name = "fullname_public" placeholder="Full Name" id = "nama_lengkap" required>
 
-                <input type="text" class = "input_username_signup" name = "username_public" placeholder="Username (3 Capital Letters)" id = "username" required>
+                <input type="text" class = "input_email_signup" name = "email_public" placeholder="Email" id = "email" required>
 
-                <div class = "warning hidden" id = "username_warning_same">
-                    *Username is already taken, please use another username
+                <div class = "warning hidden" id = "email_warning_taken">
+                    *Email is already registered, please log in
                 </div>
 
-                <div class = "warning hidden" id = "username_warning_capital">
-                    *Username has to be capital letters
-                </div>
-
-                <div class = "warning hidden" id = "username_warning_three">
-                    *Username has to be three capital letters
+                <div class = "warning hidden" id = "email_warning_notvalid">
+                    *Email is not valid
                 </div>
                 
                 <input type="password" class = "input_pass_signup" name = "pass_public" placeholder="Password" id = "password" required>

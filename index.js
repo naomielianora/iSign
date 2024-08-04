@@ -7,7 +7,7 @@ import forge from 'node-forge';
 const PORT = 8080;
 const app = express();
 
-import { usernameChecker, signUpUser } from "./query/querySignUp.js";
+import { emailChecker, signUpUser } from "./query/querySignUp.js";
 import { getUserData } from "./query/queryLogin.js";
 import { getSignerPublicKey, insertSigLog, getSigLog, checkSignature } from "./query/queryUser.js";
 
@@ -61,10 +61,11 @@ app.get('/sign_up', function(req, res) {
     res.render('sign_up');
   });
 
+//USER SIGN UP
 app.post('/sign_up', function(req, res) {
     //mengambil nama lengkap, email, dan password yang diinput user
     let nama_lengkap_sign_up = req.body.fullname_public;
-    let username_sign_up = req.body.username_public;
+    let email_sign_up = req.body.email_public;
     //password yang diinput user akan dihash menggunakan sha256
     let pass_input = req.body.pass_public;
     let password_sign_up = crypto.createHash('sha256').update(pass_input).digest('base64');
@@ -76,29 +77,27 @@ app.post('/sign_up', function(req, res) {
 
     // Function to derive a key from the user's password. The derived key is used to encrypt the private key securely.
     function deriveKeyFromPassword(password, salt) {
-        // password: The user's password.
-        // salt: A random value added to the password before hashing to ensure unique keys for identical passwords.
-        // PBKDF2: The function uses the Password-Based Key Derivation Function 2 (PBKDF2) algorithm.
-        // Iterations: 100,000 iterations. This makes it computationally expensive for attackers to try brute-forcing the password.
-        // Key Length: 32 bytes (256 bits) is the length of the derived key.
-        // Digest Algorithm: SHA-256 is used for hashing.
+        //Fungsi deriveKeyFromPassword menggunakan algoritma PBKDF2 (Password-Based Key Derivation Function 2) untuk mengubah password pengguna menjadi kunci enkripsi.
+        //Salt (nilai acak) dan password digunakan untuk menghasilkan kunci derivasi yang unik.
+        //Proses ini dilakukan dengan 100,000 iterasi untuk menambah keamanan terhadap serangan brute-force.
         return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
     }
 
     // Function to encrypt the private key using the user's password
     function encryptPrivateKey(privateKey, password) {
-        //Purpose: IV (Initialization Vector) is a random value used to ensure that identical plaintexts encrypt to different ciphertexts. This prevents attackers from inferring relationships between identical blocks of plaintext. Length: 16 bytes (128 bits)
-        const iv = crypto.randomBytes(16); // Initialization vector
-        //Purpose: The derived key is used for the encryption process. It is unique for each combination of password and salt.
-        const salt = crypto.randomBytes(16); // Salt for key derivation
+        //IV (Initialization Vector) digunakan untuk memastikan setiap enkripsi menghasilkan ciphertext yang berbeda meskipun plaintext yang dienkripsi sama. Length: 16 bytes (128 bits)
+        const iv = crypto.randomBytes(16);
+        
+        //Salt digunakan untuk memastikan bahwa password yg sama bisa menghasilkan hasil yg berbeda. Harus unik untuk tiap user
+        const salt = crypto.randomBytes(16);
 
+        //Generate key dari password dan salt
         const key = deriveKeyFromPassword(password, salt);
 
         const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+        //Kunci yang dihasilkan dari password dan salt digunakan untuk mengenkripsi private key menggunakan algoritma AES-256-CBC.
         //Algorithm: AES-256-CBC (Advanced Encryption Standard with 256-bit key size and Cipher Block Chaining mode).
-        // Key: The derived key.
-        // IV: The initialization vector.
-
+        
         let encryptedPrivateKey = cipher.update(privateKey, 'utf-8', 'base64');
         // cipher.update: Encrypts the data (private key).
         // privateKey: The plaintext private key.
@@ -117,7 +116,7 @@ app.post('/sign_up', function(req, res) {
     const { encryptedPrivateKey, salt, iv } = encryptPrivateKey(privateKey, pass_input);
 
     //masukan ke database lalu apabila berhasil maka alihkan ke page konfirmasi
-    signUpUser(nama_lengkap_sign_up, username_sign_up, password_sign_up, encryptedPrivateKey, publicKey, salt, iv)
+    signUpUser(nama_lengkap_sign_up, email_sign_up, password_sign_up, encryptedPrivateKey, publicKey, salt, iv)
         .then(() => res.redirect('/sign_up_conf'));
 })
 
@@ -125,14 +124,14 @@ app.get('/sign_up_conf', (req, res)=>{
     res.render('sign_up_conf')
 })
 
-//untuk mengecek apakah username yg diinput user sudah ada di database
-app.get('/check_username', (req, res) => {
-    const inputed_username = req.query.inputed_username;
-    let usernameTaken = true;
-    usernameChecker(inputed_username).then((data) => {
-        usernameTaken = (JSON.parse(JSON.stringify(data))[0]) !== undefined;
+//untuk mengecek apakah email yg diinput user sudah ada di database
+app.get('/check_email', (req, res) => {
+    const inputed_email = req.query.inputed_email;
+    let emailTaken = true;
+    emailChecker(inputed_email).then((data) => {
+        emailTaken = (JSON.parse(JSON.stringify(data))[0]) !== undefined;
         const response = {
-            taken: usernameTaken
+            taken: emailTaken
           };
           
         res.json(response);
@@ -147,17 +146,17 @@ app.get('/check_username', (req, res) => {
     showAlert = false;
   });
 
-//jika tombol "Login" diklik
+//LOG IN USER
 app.post('/log_in', (req, res) => {
     //mengambil email dan password yg diinput user
-    let username = req.body.username_public;
+    let email = req.body.email_public;
     //password akan segera dihash dan dicocockan dengan password yang sudah dalam bentuk hash juga di database
     let password = crypto.createHash('sha256').update(req.body.pass_public).digest('base64');
     //cek email dan password ke db, apabila benar, maka akan dikembalikan data user terkait
 
-    getUserData(username, password).then((data) => {
+    getUserData(email, password).then((data) => {
         let res_data = JSON.parse(JSON.stringify(data))[0];
-        //jika username&pass benar (ada data yang dikembalikan)
+        //jika email&pass benar (ada data yang dikembalikan)
         if (res_data !== undefined) {
           //jangan tampilkan warning
           showAlert = false;
@@ -167,8 +166,8 @@ app.post('/log_in', (req, res) => {
           session.id_user = res_data.id_user;
           //tambahkan nama lengkap ke session
           session.nama_lengkap = res_data.nama_lengkap;
-          //tambahkan username ke session
-          session.username = res_data.username;
+          //tambahkan email ke session
+          session.email = res_data.email;
           res.redirect('/');
         }
         //jika email dan/atau password salah
@@ -197,7 +196,6 @@ let hasSigned = false;
 app.get('/form_sign', auth, (req, res)=>{
     res.render('form_sign', {
         nama_lengkap: req.session.nama_lengkap || "",
-        username : req.session.username,
         passwordWrong: passwordWrong,
         hasSigned: hasSigned
     })
@@ -208,6 +206,7 @@ app.get('/form_sign', auth, (req, res)=>{
 //untuk mengambil tanggal saat ini
 const current_date = new Date().toISOString().slice(0, 10);
 
+//SIGN DOCUMENT
 app.post('/sign_doc', auth, async(req,res) =>{
     //ambil nilai" yang diinput oleh user
     let no_surat = req.body.no_surat;
@@ -217,8 +216,6 @@ app.post('/sign_doc', auth, async(req,res) =>{
 
     //cek apakah user sudah pernah sign document yang sama
     checkSignature(req.session.id_user, no_surat).then((signature) => {
-        console.log(signature.length);
-        console.log(signature.length > 1);
         if(signature.length >= 1){
             //tampilkan warning
             hasSigned = true;
@@ -228,7 +225,7 @@ app.post('/sign_doc', auth, async(req,res) =>{
             //cek apakah password yang diinput benar
             getUserData(signedby, password).then((data) => {
             let res_data = JSON.parse(JSON.stringify(data))[0];
-            //jika username&pass benar (ada data yang dikembalikan)
+            //jika email&pass benar (ada data yang dikembalikan)
             if (res_data !== undefined) {
                 //jangan tampilkan warning
                 passwordWrong = false;
