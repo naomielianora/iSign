@@ -5,27 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>iSign</title>
     <link rel="stylesheet" type="text/css" href="/css/hasil_sign.css">
-    <script type="text/javascript" src="/js/hasil_sign.js" defer></script>
 </head>
 <body>
 
     <script>
-        function copyText() {
-            // Get the input element
-            const inputElement = document.getElementById('hasilHash');
+        function downloadQRCode() {
+            // Get the QR Code data URL
+            const qrCodeData = '<%- qrCodeData %>';
 
-            // Select the text inside the input element
-            inputElement.select();
-            inputElement.setSelectionRange(0, 99999); // For mobile devices
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.href = qrCodeData;
+            link.download = '<%- no_surat %> - <%- nama_lengkap %>.png'; // Set the default file name
 
-            // Copy the selected text to the clipboard
-            document.execCommand('copy');
+            // Append the link to the document body (necessary for some browsers)
+            document.body.appendChild(link);
 
-            // Deselect the text
-            window.getSelection().removeAllRanges();
+            // Programmatically click the link to trigger the download
+            link.click();
 
-            // Optionally, provide some visual feedback to the user
-            alert('Text copied to clipboard: ' + inputElement.value);
+            // Remove the link from the document
+            document.body.removeChild(link);
         }
     </script>
 
@@ -37,7 +37,7 @@
             <div id="containerText">
                 <img src="<%- qrCodeData %>" alt="QR Code" width = 200px height = 200px>
 
-                <button id="downloadButton" onclick="downloadFile('<%- qrCodeData %>')" > Download </button>
+                <button id="downloadButton" onclick="downloadQRCode('<%- qrCodeData %>')" > Download </button>
 
 
                 <!-- <div id="containerText">

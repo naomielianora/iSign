@@ -347,7 +347,8 @@ app.post('/sign_doc', auth,  upload.single('surat'),async(req, res) => {
         res.render('hasil_sign', {
             nama_lengkap: req.session.nama_lengkap || "",
             digitalSignature: final_signature,
-            qrCodeData
+            qrCodeData,
+            no_surat
         });
 
     } catch (error) {
