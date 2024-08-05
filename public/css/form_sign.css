@@ -29,7 +29,7 @@ html, body{
 #all{
     display: grid;
     justify-content: center;
-    margin-top: 50px;
+    margin-top: 25px;
 }
 
 h1{
@@ -69,6 +69,10 @@ label{
     font-size: 1.2em;
     color: gray;
     padding-top: 15px;
+}
+
+.surat_label{
+    padding-top: 4px;
 }
 
 input[type="text"]{
@@ -114,4 +118,18 @@ input[type="password"]{
     color: red;
     font-size: 13px;
     font-family: Regular;
+}
+
+input[type=file]::file-selector-button {
+    background-color: #3969B3;
+    border: none;
+    color: white;
+    padding: 5px;
+    border-radius: 5px;
+    width: 120px;
+    margin-right: 15px;
+}
+
+#surat{
+    padding: 5px 0px 0px 0px;
 }

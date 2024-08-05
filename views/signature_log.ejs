@@ -17,7 +17,7 @@
                     <th id="log_no">No.</th>
                     <th id="log_tanggal">Tanggal</th>
                     <th id="log_nomor">Nomor Surat</th>
-                    <th id="log_hash">Teks <i>Signature</i></th>
+                    <th id="log_hash">QR Code</th>
                 </thead>
                 <tbody id="log_tab_row">
                     <% for (let i = 0; i < sigLog.length; i++) { %>
@@ -25,7 +25,9 @@
                             <td id="log_no"><%= i+1 %></td>
                             <td id="log_tanggal"><%= sigLog[i].tanggal_ttd.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }); %></td>
                             <td id="log_nomor"><%= sigLog[i].no_surat %></td>
-                            <td id="log_hash">SIGNED BY <%- username %> FOR <%=sigLog[i].hash_value %></td>
+                            <td id="log_hash">
+                                <img src="<%= sigLog[i].qr_code %>" alt="QR Code" width="100" height="100">
+                            </td>
                         </tr>
                     <% } %>
                 </tbody>

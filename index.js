@@ -3,6 +3,17 @@ import session from 'express-session';
 import crypto from 'crypto';
 import bodyParser from 'body-parser';
 import forge from 'node-forge';
+import multer from 'multer';
+import { PdfReader } from 'pdfreader';
+import QRCode from 'qrcode';
+import path from 'path';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
 const PORT = 8080;
 const app = express();
@@ -10,6 +21,8 @@ const app = express();
 import { emailChecker, signUpUser } from "./query/querySignUp.js";
 import { getUserData } from "./query/queryLogin.js";
 import { getSignerPublicKey, insertSigLog, getSigLog, checkSignature } from "./query/queryUser.js";
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 app.listen(PORT, () => {
     console.log(`Server is ready, listening on port ${PORT}`);
@@ -20,6 +33,8 @@ app.set('view engine', 'ejs');
 app.use(express.static('public'));
 //untuk mendapatkan input dari sisi user
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
 
 //untuk membuat session
 app.use(
@@ -190,7 +205,7 @@ app.get('/log_out', (req, res) => {
     });
 })
 
-
+//SIGN A DOCUMENT FORM
 let passwordWrong = false;
 let hasSigned = false;
 app.get('/form_sign', auth, (req, res)=>{
@@ -207,101 +222,155 @@ app.get('/form_sign', auth, (req, res)=>{
 const current_date = new Date().toISOString().slice(0, 10);
 
 //SIGN DOCUMENT
-app.post('/sign_doc', auth, async(req,res) =>{
-    //ambil nilai" yang diinput oleh user
-    let no_surat = req.body.no_surat;
-    let signedby = req.body.signedby;
-    let password_input = req.body.password
-    let password = crypto.createHash('sha256').update(password_input).digest('base64');
+app.post('/sign_doc', auth,  upload.single('surat'),async(req, res) => {
+    try {
+        //ambil nilai" yang diinput oleh user
+        let no_surat = req.body.no_surat;
+        let password_input = req.body.password;
+        let password = crypto.createHash('sha256').update(password_input).digest('base64');
+        //ambil email dari user
+        let email = req.session.email;
 
-    //cek apakah user sudah pernah sign document yang sama
-    checkSignature(req.session.id_user, no_surat).then((signature) => {
-        if(signature.length >= 1){
-            //tampilkan warning
+        const signature = await checkSignature(req.session.id_user, no_surat);
+        if (signature.length >= 1) {
             hasSigned = true;
-            res.redirect('/form_sign');
+            return res.redirect('/form_sign');
         }
-        else{
-            //cek apakah password yang diinput benar
-            getUserData(signedby, password).then((data) => {
-            let res_data = JSON.parse(JSON.stringify(data))[0];
-            //jika email&pass benar (ada data yang dikembalikan)
-            if (res_data !== undefined) {
-                //jangan tampilkan warning
-                passwordWrong = false;
 
-                // Function to derive a key from the user's password
-                function deriveKeyFromPassword(password, salt) {
-                    return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
-                }
+        //cek apakah password yang diinput benar
+        const userData = await getUserData(email, password);
+        let res_data = JSON.parse(JSON.stringify(userData))[0];
 
-                // Function to decrypt the private key using the user's password
-                function decryptPrivateKey(encryptedPrivateKey, password, salt, iv) {
-                    const saltBuffer = Buffer.from(salt, 'base64');
-                    const ivBuffer = Buffer.from(iv, 'base64');
-                    //Convert the base64-encoded salt and IV from the database back into their original binary forms.
+        //jika email&pass salah (tidak ada data yang dikembalikan)
+        if (res_data === undefined) {
+            passwordWrong = true;
+            return res.redirect('/form_sign');
+        }
 
-                    const key = deriveKeyFromPassword(password, saltBuffer);
+        //jika benar, jangan tampilkan warning dan lanjut ke proses selanjutnya
+        passwordWrong = false;
 
-                    const decipher = crypto.createDecipheriv('aes-256-cbc', key, ivBuffer);
-                    let decryptedPrivateKey = decipher.update(encryptedPrivateKey, 'base64', 'utf-8');
-                    //Input Encoding: base64 is the encoding of the encrypted private key.
-                    //Output Encoding: utf-8 is the encoding of the decrypted private key.
-                    decryptedPrivateKey += decipher.final('utf-8');
+        // Function to derive a key from the user's password
+        function deriveKeyFromPassword(password, salt) {
+            return crypto.pbkdf2Sync(password, salt, 100000, 32, 'sha256');
+        }
 
-                    return decryptedPrivateKey;
-                }
+        // Function to decrypt the private key using the user's password
+        function decryptPrivateKey(encryptedPrivateKey, password, salt, iv) {
+            const saltBuffer = Buffer.from(salt, 'base64');
+            const ivBuffer = Buffer.from(iv, 'base64');
+            //Convert the base64-encoded salt and IV from the database back into their original binary forms
+            const key = deriveKeyFromPassword(password, saltBuffer);
 
-                const decryptedPrivateKey = decryptPrivateKey(res_data.private_key, password_input, res_data.salt, res_data.iv);
+            const decipher = crypto.createDecipheriv('aes-256-cbc', key, ivBuffer);
+            let decryptedPrivateKey = decipher.update(encryptedPrivateKey, 'base64', 'utf-8');
+            //Input Encoding: base64 is the encoding of the encrypted private key.
+            //Output Encoding: utf-8 is the encoding of the decrypted private key.
+            decryptedPrivateKey += decipher.final('utf-8');
 
-                //CREATE DIGITAL SIGNATURE
-                function createDigitalSignature(data, privateKeyPem) {
-                    //private key user
-                    const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
-                
-                    //hash data berupa no surat dengan sha 256
-                    const md = forge.md.sha256.create();
-                    md.update(data, 'utf-8');
-                    const hash = md.digest();
+            return decryptedPrivateKey;
+        }
 
-                    //buat signature dari hasil hash tsb dan dienkripsi dengan private key user
-                    const signature = privateKey.sign(md);
-                    
-                    //kembalikan data(no surat) dan digital signaturenya
-                    return {
-                        data,
-                        signature: forge.util.encode64(signature),
-                    };
-                }
+        const decryptedPrivateKey = decryptPrivateKey(res_data.private_key, password_input, res_data.salt, res_data.iv);
 
-                //masukan data ke method
-                const digitalSignature = createDigitalSignature(no_surat, decryptedPrivateKey);
-
-                //ambil digital signature dari hasil method
-                const signature = digitalSignature.signature;
-                //ambil data yaitu no surat dari hasil method
-                const data = digitalSignature.data;
-
-                //masukan data ke signature log
-                insertSigLog(data, signature, current_date, req.session.id_user)
-
-                //tampilkan hasil ke user
-                res.render('hasil_sign', {
-                    nama_lengkap: req.session.nama_lengkap || "",
-                    digitalSignature: digitalSignature.signature,
-                    username: req.session.username
-                })
-            }
-            //jika email dan/atau password salah
-            else {
-                passwordWrong = true;
-                res.redirect('/form_sign');
-            }
-            });
+        //CREATE DIGITAL SIGNATURE METHOD
+        function createDigitalSignature(data, privateKeyPem) {
+            // Private key user
+            const privateKey = forge.pki.privateKeyFromPem(privateKeyPem);
+            
+            // Create a message digest object for SHA-256
+            const md = forge.md.sha256.create();
+            md.update(data, 'utf8'); // Ensure correct encoding here
+            
+            // Create the signature
+            const signature = privateKey.sign(md); // Sign using the message digest object
+            
+            // Return the data (no_surat) and the digital signature
+            return {
+                data,
+                signature: forge.util.encode64(signature),
+            };
         }
         
-    })
-})
+
+        //buat digital signature dari no surat dan private key user
+        const digitalSignature = createDigitalSignature(no_surat, decryptedPrivateKey);
+
+        //ambil file pdf dari buffer
+        const pdfBuffer = req.file.buffer;
+        let extractedText = '';
+        
+        //membaca isi dari pdf dan return textnya
+        const parseBuffer = () => new Promise((resolve, reject) => {
+            new PdfReader().parseBuffer(pdfBuffer, (err, item) => {
+                if (err) {
+                    reject(err);
+                } else if (!item) {
+                    resolve(extractedText);
+                } else if (item.text) {
+                    extractedText += item.text;
+                }
+            });
+        });
+        
+
+        extractedText = await parseBuffer();
+        console.log("Extracted text from pdf:")
+        console.log(extractedText);
+
+        //hash isi dari pdf
+        const hash = crypto.createHash('sha256');
+        hash.update(extractedText);
+        const hashedText = hash.digest('hex');
+
+        //kosongkan buffer
+        req.file.buffer = null;
+
+        //buat template signature
+        let final_signature = 'SIGNED BY: ' + req.session.nama_lengkap + ' SIGNATURE: ' + digitalSignature.signature + ' DOCUMENT: ' + hashedText;
+
+        // Generate QR code
+        const qrCodeData = await QRCode.toDataURL(final_signature);
+        // const base64Data = qrCodeData.split(',')[1];
+        // const qrCodeBinary = Buffer.from(base64Data, 'base64');
+
+        // Define the file path and name
+        // const filename = `${no_surat}_signed_by_${req.session.nama_lengkap}.png`;
+        // const filePath = path.join(__dirname, 'uploads', filename);
+
+        // Save the QR code image to the file system
+        // fs.writeFileSync(filePath, qrCodeBinary);
+
+        //insert hasil dari signature ke database
+        await insertSigLog(digitalSignature.data, final_signature, qrCodeData, current_date, req.session.id_user);
+
+        res.render('hasil_sign', {
+            nama_lengkap: req.session.nama_lengkap || "",
+            digitalSignature: final_signature,
+            qrCodeData
+        });
+
+    } catch (error) {
+        console.error('An error occurred while processing the document:', error);
+        res.status(500).send('An error occurred while processing the document');
+    }
+});
+
+//untuk mengambil file yang ada di folder uploads and mengdownloadnya
+app.get('/uploads/:filename', auth, (req, res) => {
+    //buat path yang menuju ke file yang ingin didownload
+    const filename = decodeURIComponent(req.params.filename);
+    const filePath = path.join(__dirname, 'uploads', filename);
+  
+    if (fs.existsSync(filePath)) {
+      //jika file tsb ada, maka kirimkan sinyal ke js client untuk download file tsb
+      res.sendFile(filePath);
+    } else {
+      //jika file tidak ditemukan, maka tampilkan error
+      console.error('File not found:', filePath);
+      res.status(404).send('File not found');
+    }
+  });
 
 app.get('/check_sign', (req, res)=>{
     res.render('check_sign', {
@@ -326,27 +395,26 @@ app.post('/check_sign', async(req, res)=>{
 
     //VERIFY DIGITAL SIGNATURE
     function verifyDigitalSignature(data, signature, publicKeyPem) {
-        try{
+        try {
             //public key user yang username nya terdapat di QR
             const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
         
             //hash no surat dengan sha256
             const md = forge.md.sha256.create();
             md.update(data, 'utf-8');
-            const hash = md.digest();
         
             //decode signature
             const decodedSignature = forge.util.decode64(signature);
 
             //Verify signature menggunakan public key (akan return true jika valid dan false jika tidak valid)
-            const isValid = publicKey.verify(md.digest().getBytes(), decodedSignature);
+            const isValid = publicKey.verify(md.digest().bytes(), decodedSignature);
             return isValid;
-        }
-        catch (error) {
+        } catch (error) {
             // jika QR is corrupted by other username that exist in db (the public key is not match)
             return false; 
         }
     }
+
     let isValidSignature;
 
     // jika QR is corrupted by username that does not exist in db

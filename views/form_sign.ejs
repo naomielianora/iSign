@@ -13,7 +13,7 @@
             <h1> Sign a Document</h1>
             <div id="box">
                 
-                <form method = "POST" action = "/sign_doc">
+                <form method = "POST" action = "/sign_doc" enctype="multipart/form-data">
                     <div id = "form-content">
                         <label for="nosu" class = "nosu_label">No. Surat</label>
                         <input type="text" name="no_surat" id="nosu" class = "input_nosu"required>
@@ -23,6 +23,9 @@
 
                         <label for="password" class = "password_label">Password</label>
                         <input type="password" name="password" id="password" class = "input_password"required>
+
+                        <label for="surat" class = "surat_label">Surat</label>
+                        <input type="file" name = "surat" id="surat" accept=".pdf" required>
 
                         
                     </div>

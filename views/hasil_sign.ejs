@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>iSign</title>
     <link rel="stylesheet" type="text/css" href="/css/hasil_sign.css">
+    <script type="text/javascript" src="/js/hasil_sign.js" defer></script>
 </head>
 <body>
 
@@ -32,16 +33,23 @@
     <%- include('./layout/user_header.ejs') %>
     <div id="outer">
         <div id="all">
-            <h1> Hash Value</h1>
-            <div id="box">
-                <div id="containerText">
-                    <input type="text" name="hasilHash" id="hasilHash" value = "SIGNED BY <%- username %> FOR <%- digitalSignature %>" readonly>
+            <h1>Your QR Code</h1>
+            <div id="containerText">
+                <img src="<%- qrCodeData %>" alt="QR Code" width = 200px height = 200px>
+
+                <button id="downloadButton" onclick="downloadFile('<%- qrCodeData %>')" > Download </button>
+
+
+                <!-- <div id="containerText">
+                    <input type="text" name="hasilHash" id="hasilHash" value = "<%- digitalSignature %>" readonly>
                 </div>
 
                 <div id="buttons">
                     <a href="https://me-qr.com/qr-code-generator/text" target="_blank" id="generateButton">Generate QR</a>
                     <button onclick="copyText()" id="copyButton">Copy</button>
                 </div>
+
+                <img src="<%- qrCodeData %>" alt="QR Code"> -->
             </div>
         </div>
     </div>

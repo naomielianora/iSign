@@ -22,8 +22,9 @@ CREATE TABLE `User` (
 -- Table structure for table `Digital_Signature`
 CREATE TABLE `Digital_Signature` (
   `id_signature` int(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `no_surat` varchar(100) NOT NULL,
-  `hash_value` varchar(500) NOT NULL,
+  `no_surat` TEXT NOT NULL,
+  `signature` TEXT NOT NULL,
+  `qr_code` TEXT NOT NULL,
   `tanggal_ttd` DATE NOT NULL,
   `id_user` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;   

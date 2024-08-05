@@ -29,7 +29,7 @@ html, body{
 #all{
     display: grid;
     justify-content: center;
-    margin-top: 80px;
+    margin-top: 50px;
 }
 
 h1{
@@ -49,22 +49,12 @@ h1{
     padding: 10px;
 }
 
-input[type="text"]{
-    background-color: lightgrey;
-    border: none;
-    border-radius: 5px;
-
-    height: 3px;
-    width: 250px;
-
-    margin : 60px;
-    padding: 30px;
-}
-
 #containerText{
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
+    gap: 10px;
 }
 
 #buttons{
@@ -72,14 +62,13 @@ input[type="text"]{
     justify-content: space-between;
 }
 
-#generateButton{
-    font-family: Regular;
+#downloadButton{
+    font-family: Bold;
     color: white;
     padding: 7px;
-    background-color: #3969B3;
+    background-color: #1A2C56;
     border-radius: 15px;
     width: 140px;
-    height: 20px;
     text-align: center;
     text-decoration: none;
 }

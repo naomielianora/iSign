@@ -22,7 +22,7 @@ html,body {
     display: grid;
     justify-items: center;
     gap: 10px;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
 }
 
 .content img{

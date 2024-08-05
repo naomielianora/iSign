@@ -17,10 +17,10 @@ export const getSignerPublicKey = async(username) => {
 };
 
 //untuk mengambil data user yang memiliki email dan password yang sama dengan yang diinput user
-export const insertSigLog = async(data, signature, current_date, id_user) => {
+export const insertSigLog = async(data, signature, qrcode, current_date, id_user) => {
     const conn = await dbConnect();
     return new Promise((resolve, reject) => {
-        conn.query('INSERT INTO digital_signature (no_surat, hash_value, tanggal_ttd, id_user) VALUES (?,?,?,?)', [data, signature, current_date, id_user], (err, result) => {
+        conn.query('INSERT INTO digital_signature (no_surat, signature, qr_code, tanggal_ttd, id_user) VALUES (?,?,?,?,?)', [data, signature, qrcode, current_date, id_user], (err, result) => {
             if(err){
                 reject (err);
             }
