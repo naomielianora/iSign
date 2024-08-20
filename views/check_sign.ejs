@@ -35,23 +35,22 @@
     <div id="outer">
         <div id="all">
             <h1> Check a Signature</h1>
-            
-                <form>
-                    <div id="box">
-                        <div id="content">
-                            <label for="isiQR" class = "isiQR_label">Isi QR</label>
-                            <input type="text" name="isiQR" id="isiQR" class = "input_isiQR"required>
-                            <label for="no_surat" class = "no_surat_label">No. Surat</label>
-                            <input type="text" name="no_surat" id="no_surat" class = "input_no_surat" required>
-                        </div>
-                        
-                        <div id="checkButtonDiv">
-                            <button id="checkButton" type = "button">CHECK</button>
-                        </div>
+            <form>
+                <div id="box">
+                    <div id="content">
+                        <!-- <label for="isiQR" class = "isiQR_label">Isi QR</label>
+                        <input type="text" name="isiQR" id="isiQR" class = "input_isiQR"required> -->
+                        <label for="no_surat" class = "no_surat_label">No. Surat</label>
+                        <input type="text" name="no_surat" id="no_surat" class = "input_no_surat" required>
+                        <label for="surat" class = "surat_label">Surat</label>
+                        <input type="file" name = "surat" id="surat" accept=".pdf" required>
                     </div>
                     
-                </form>
-            </div>
+                    <div id="checkButtonDiv">
+                        <button id="checkButton" type = "button">CHECK</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 </body>

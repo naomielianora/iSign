@@ -34,23 +34,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     //jika tombol "submit" di pop up di klik
     checkButton.addEventListener('click', function () {
-        const isiQRInput = document.getElementById('isiQR').value;
         const noSuratInput = document.getElementById('no_surat').value;
+        const suratInput = document.getElementById('surat').files[0];
 
-
-        //buat sebuah URLSearchParams object yang akan diisi dengan data yang ingin dikirim ke server
-        const formData = new URLSearchParams();
-        //isi dengan data yang diperlukan
-        formData.append('isiQR', isiQRInput);
+        const formData = new FormData();
         formData.append('no_surat', noSuratInput);
+        formData.append('surat', suratInput);
 
-
-        //kirim data ke index.js menggunakan query string
         fetch('/check_sign', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
             body: formData,
         })
         .then(response => response.json())

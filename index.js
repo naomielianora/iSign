@@ -4,16 +4,14 @@ import crypto from 'crypto';
 import bodyParser from 'body-parser';
 import forge from 'node-forge';
 import multer from 'multer';
-import { PdfReader } from 'pdfreader';
+import PdfReader from 'pdfreader';
 import QRCode from 'qrcode';
-import path from 'path';
-import fs from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import PDFLib from 'pdf-lib';
+import jsQR from 'jsqr';
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
+const PDFDocument = PDFLib.PDFDocument;
 
 const PORT = 8080;
 const app = express();
@@ -21,8 +19,6 @@ const app = express();
 import { emailChecker, signUpUser } from "./query/querySignUp.js";
 import { getUserData } from "./query/queryLogin.js";
 import { getSignerPublicKey, insertSigLog, getSigLog, checkSignature } from "./query/queryUser.js";
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 
 app.listen(PORT, () => {
     console.log(`Server is ready, listening on port ${PORT}`);
@@ -310,7 +306,7 @@ app.post('/sign_doc', auth,  upload.single('surat'),async(req, res) => {
 });
 
 //CHECK A SIGNATURE FORM
-app.get('/check_sign', (req, res)=>{
+app.get('/check_sign', auth, (req, res)=>{
     res.render('check_sign', {
         id_user: req.session.id_user || 0,
         nama_lengkap: req.session.nama_lengkap || "",
@@ -318,58 +314,92 @@ app.get('/check_sign', (req, res)=>{
 })
 
 //CHECK SIGNATURE AND DOCUMENT
-app.post('/check_sign', async(req, res)=>{
-    //ambil isi QR yang diinput
-    let isiQR = req.body.isiQR;
-    //ambil username yang ada di QR (siapa yang ttd)
-    let signed_by = isiQR.substring(10,14);
-    //ambil digital signature yang ada di QR
-    let digital_sig = isiQR.substring(18);
-
+app.post('/check_sign', auth, upload.single('surat'), async(req, res)=>{
     //ambil no surat yang diinput
     let no_surat = req.body.no_surat;
 
-    //ambil public key dari username yang tertera di QR
-    let public_key = await getSignerPublicKey(signed_by);
+    //ambil file pdf dari buffer
+    const uploadedPDF = req.file.buffer;
 
-    //VERIFY DIGITAL SIGNATURE
-    function verifyDigitalSignature(data, signature, publicKeyPem) {
-        try {
-            //public key user yang username nya terdapat di QR
-            const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
-        
-            //hash no surat dengan sha256
-            const md = forge.md.sha256.create();
-            md.update(data, 'utf-8');
-        
-            //decode signature
-            const decodedSignature = forge.util.decode64(signature);
+    async function extractQrCodeFromPdf(uploadedPDF) {
+        const pdfDoc = await PDFDocument.load(uploadedPDF);
 
-            //Verify signature menggunakan public key (akan return true jika valid dan false jika tidak valid)
-            const isValid = publicKey.verify(md.digest().bytes(), decodedSignature);
-            return isValid;
-        } catch (error) {
-            // jika QR is corrupted by other username that exist in db (the public key is not match)
-            return false; 
+        const pages = pdfDoc.getPages();
+        console.log(pages);
+        for (let page of pages) {
+            const xObjects = page.node.Resources.XObject;
+            console.log(xObjects);
+            for (let imageKey in xObjects) {
+                const image = xObjects[imageKey];
+                // Check if this image is a QR code
+                const qrCodeData = jsQR(image.data, image.width, image.height);
+                if (qrCodeData) {
+                    return qrCodeData; // Return the decoded QR code data
+                }
+            }
         }
+        return null; // No QR code found
+    }
+    // Extract the QR code from the PDF buffer
+    const qrCodeData = await extractQrCodeFromPdf(uploadedPDF);
+
+    if (qrCodeData) {
+        console.log("QR Code Data:", qrCodeData.data);
+        // Here, decode the QR code content
+    } else {
+        console.log("No QR code found in the PDF.");
     }
 
-    let isValidSignature;
 
-    // jika QR is corrupted by username that does not exist in db
-    if(public_key[0] == undefined){
-        isValidSignature = false
-    }else{
-        // Verify the digital signature
-        isValidSignature = verifyDigitalSignature(
-            no_surat,
-            digital_sig,
-            public_key[0].public_key
-        );
-    }
+    // //ambil isi QR yang diinput
+    // let isiQR = req.body.isiQR;
+    // //ambil username yang ada di QR (siapa yang ttd)
+    // let signed_by = isiQR.substring(10,14);
+    // //ambil digital signature yang ada di QR
+    // let digital_sig = isiQR.substring(18);
+    //ambil public key dari username yang tertera di QR
+    // let public_key = await getSignerPublicKey(signed_by);
+
+
+
+    // //VERIFY DIGITAL SIGNATURE
+    // function verifyDigitalSignature(data, signature, publicKeyPem) {
+    //     try {
+    //         //public key user yang username nya terdapat di QR
+    //         const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
+        
+    //         //hash no surat dengan sha256
+    //         const md = forge.md.sha256.create();
+    //         md.update(data, 'utf-8');
+        
+    //         //decode signature
+    //         const decodedSignature = forge.util.decode64(signature);
+
+    //         //Verify signature menggunakan public key (akan return true jika valid dan false jika tidak valid)
+    //         const isValid = publicKey.verify(md.digest().bytes(), decodedSignature);
+    //         return isValid;
+    //     } catch (error) {
+    //         // jika QR is corrupted by other username that exist in db (the public key is not match)
+    //         return false; 
+    //     }
+    // }
+
+    // let isValidSignature;
+
+    // // jika QR is corrupted by username that does not exist in db
+    // if(public_key[0] == undefined){
+    //     isValidSignature = false
+    // }else{
+    //     // Verify the digital signature
+    //     isValidSignature = verifyDigitalSignature(
+    //         no_surat,
+    //         digital_sig,
+    //         public_key[0].public_key
+    //     );
+    // }
     
-    //kirim data ke client apakah signature valid atau tidak dan tampilkan pop up yang sesuai
-    res.json({ PopUpValid: isValidSignature });
+    // //kirim data ke client apakah signature valid atau tidak dan tampilkan pop up yang sesuai
+    // res.json({ PopUpValid: isValidSignature });
 })
 
 //SIGNATURE LOG
