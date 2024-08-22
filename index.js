@@ -4,14 +4,10 @@ import crypto from 'crypto';
 import bodyParser from 'body-parser';
 import forge from 'node-forge';
 import multer from 'multer';
-import PdfReader from 'pdfreader';
 import QRCode from 'qrcode';
-import PDFLib from 'pdf-lib';
-import jsQR from 'jsqr';
-
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
-const PDFDocument = PDFLib.PDFDocument;
+
 
 const PORT = 8080;
 const app = express();
@@ -313,93 +309,56 @@ app.get('/check_sign', auth, (req, res)=>{
     })
 })
 
+import { PDFDocument, PDFRawStream } from 'pdf-lib';
+import fs from 'fs';
+import jsQR from 'jsqr';
+import { createCanvas, loadImage } from 'canvas';
+
 //CHECK SIGNATURE AND DOCUMENT
 app.post('/check_sign', auth, upload.single('surat'), async(req, res)=>{
     //ambil no surat yang diinput
     let no_surat = req.body.no_surat;
 
-    //ambil file pdf dari buffer
-    const uploadedPDF = req.file.buffer;
+    const pdfBuffer = req.file.buffer; // Assuming you're getting the buffer from a file upload
+    console.log(pdfBuffer);
 
-    async function extractQrCodeFromPdf(uploadedPDF) {
-        const pdfDoc = await PDFDocument.load(uploadedPDF);
+    // Load the existing PDF from buffer
+    const pdfDoc = await PDFDocument.load(pdfBuffer);
+    console.log(pdfDoc);
+    console.log("---------------------");
 
-        const pages = pdfDoc.getPages();
-        console.log(pages);
-        for (let page of pages) {
-            const xObjects = page.node.Resources.XObject;
-            console.log(xObjects);
-            for (let imageKey in xObjects) {
-                const image = xObjects[imageKey];
-                // Check if this image is a QR code
-                const qrCodeData = jsQR(image.data, image.width, image.height);
-                if (qrCodeData) {
-                    return qrCodeData; // Return the decoded QR code data
-                }
+    let imageCounter = 0;
+    let qrCodeFound = false;
+
+    pdfDoc.context.indirectObjects.forEach((object, ref) => {
+        if (object instanceof PDFRawStream) {
+            console.log('Found a PDFRawStream:', object);
+
+            const rawStreamContents = object.contents;
+
+            // Check if it's a JPEG image
+            if (rawStreamContents.slice(0, 3).equals(Buffer.from([0xFF, 0xD8, 0xFF]))) {
+                const imageName = `image_${imageCounter}.jpg`;
+                fs.writeFileSync(imageName, rawStreamContents);
+                console.log(`JPEG image saved as ${imageName}`);
+                imageCounter++;
+            }
+
+            // Check if it's a PNG image
+            else if (rawStreamContents.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
+                const imageName = `image_${imageCounter}.png`;
+                fs.writeFileSync(imageName, rawStreamContents);
+                console.log(`PNG image saved as ${imageName}`);
+                imageCounter++;
             }
         }
-        return null; // No QR code found
-    }
-    // Extract the QR code from the PDF buffer
-    const qrCodeData = await extractQrCodeFromPdf(uploadedPDF);
+    });
 
-    if (qrCodeData) {
-        console.log("QR Code Data:", qrCodeData.data);
-        // Here, decode the QR code content
-    } else {
-        console.log("No QR code found in the PDF.");
-    }
-
-
-    // //ambil isi QR yang diinput
-    // let isiQR = req.body.isiQR;
-    // //ambil username yang ada di QR (siapa yang ttd)
-    // let signed_by = isiQR.substring(10,14);
-    // //ambil digital signature yang ada di QR
-    // let digital_sig = isiQR.substring(18);
-    //ambil public key dari username yang tertera di QR
-    // let public_key = await getSignerPublicKey(signed_by);
+    //if there is a header and footer, it is only detected once
+    console.log('Number of images:', imageCounter);
 
 
 
-    // //VERIFY DIGITAL SIGNATURE
-    // function verifyDigitalSignature(data, signature, publicKeyPem) {
-    //     try {
-    //         //public key user yang username nya terdapat di QR
-    //         const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
-        
-    //         //hash no surat dengan sha256
-    //         const md = forge.md.sha256.create();
-    //         md.update(data, 'utf-8');
-        
-    //         //decode signature
-    //         const decodedSignature = forge.util.decode64(signature);
-
-    //         //Verify signature menggunakan public key (akan return true jika valid dan false jika tidak valid)
-    //         const isValid = publicKey.verify(md.digest().bytes(), decodedSignature);
-    //         return isValid;
-    //     } catch (error) {
-    //         // jika QR is corrupted by other username that exist in db (the public key is not match)
-    //         return false; 
-    //     }
-    // }
-
-    // let isValidSignature;
-
-    // // jika QR is corrupted by username that does not exist in db
-    // if(public_key[0] == undefined){
-    //     isValidSignature = false
-    // }else{
-    //     // Verify the digital signature
-    //     isValidSignature = verifyDigitalSignature(
-    //         no_surat,
-    //         digital_sig,
-    //         public_key[0].public_key
-    //     );
-    // }
-    
-    // //kirim data ke client apakah signature valid atau tidak dan tampilkan pop up yang sesuai
-    // res.json({ PopUpValid: isValidSignature });
 })
 
 //SIGNATURE LOG
