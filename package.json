@@ -39,6 +39,7 @@
     "pdf-parse": "^1.1.1",
     "pdfreader": "^3.0.4",
     "qrcode": "^1.5.3",
+    "qrcode-reader": "^1.0.4",
     "session": "^0.1.0"
   }
 }

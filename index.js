@@ -5,6 +5,13 @@ import bodyParser from 'body-parser';
 import forge from 'node-forge';
 import multer from 'multer';
 import QRCode from 'qrcode';
+import { PdfReader } from 'pdfreader';
+import { PDFDocument, PDFRawStream } from 'pdf-lib';
+import fs from 'fs';
+import Jimp from 'jimp';
+import qrCodeReader from 'qrcode-reader';
+
+
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
@@ -282,8 +289,24 @@ app.post('/sign_doc', auth,  upload.single('surat'),async(req, res) => {
         //buat template signature
         let final_signature = 'SIGNED BY: ' + req.session.nama_lengkap + ' SIGNATURE: ' + signature + ' DOCUMENT: ' + hashedText;
 
-        // Generate QR code
-        const qrCodeData = await QRCode.toDataURL(final_signature);
+        //Generate QR Code
+        const qrCodePngData = await QRCode.toDataURL(final_signature, {
+            errorCorrectionLevel: 'L', // Lower error correction for simpler patterns
+            margin: 1, // Minimal margin
+            width: 256, // Size of the QR code
+            color: {
+                dark: '#000000',  // QR Code color
+                light: '#FFFFFF'  // Background color
+            }
+        });
+
+         // Convert the PNG data to a JPG format using Jimp
+        const qrCodeImage = await Jimp.read(Buffer.from(qrCodePngData.split(',')[1], 'base64'));
+        qrCodeImage.background(0xFFFFFFFF); // Ensure the background is white
+        const jpgBuffer = await qrCodeImage.quality(80).getBufferAsync(Jimp.MIME_JPEG);
+
+        // Convert the JPG buffer to a base64 string and save it in the qrCodeData variable
+        const qrCodeData = `data:image/jpg;base64,${jpgBuffer.toString('base64')}`;
 
         //insert hasil dari signature ke database
         await insertSigLog(no_surat, final_signature, qrCodeData, current_date, req.session.id_user);
@@ -309,56 +332,68 @@ app.get('/check_sign', auth, (req, res)=>{
     })
 })
 
-import { PDFDocument, PDFRawStream } from 'pdf-lib';
-import fs from 'fs';
-import jsQR from 'jsqr';
-import { createCanvas, loadImage } from 'canvas';
+
 
 //CHECK SIGNATURE AND DOCUMENT
 app.post('/check_sign', auth, upload.single('surat'), async(req, res)=>{
     //ambil no surat yang diinput
     let no_surat = req.body.no_surat;
 
-    const pdfBuffer = req.file.buffer; // Assuming you're getting the buffer from a file upload
-    console.log(pdfBuffer);
-
     // Load the existing PDF from buffer
-    const pdfDoc = await PDFDocument.load(pdfBuffer);
-    console.log(pdfDoc);
-    console.log("---------------------");
+    const pdfDoc = await PDFDocument.load(req.file.buffer);
 
     let imageCounter = 0;
     let qrCodeFound = false;
 
-    pdfDoc.context.indirectObjects.forEach((object, ref) => {
+    pdfDoc.context.indirectObjects.forEach(async (object, ref) => {
         if (object instanceof PDFRawStream) {
             console.log('Found a PDFRawStream:', object);
-
+    
+            // Extract the content buffer from the PDFRawStream
             const rawStreamContents = object.contents;
-
-            // Check if it's a JPEG image
+    
+            // Define file name based on the content type
+            let imageName;
             if (rawStreamContents.slice(0, 3).equals(Buffer.from([0xFF, 0xD8, 0xFF]))) {
-                const imageName = `image_${imageCounter}.jpg`;
-                fs.writeFileSync(imageName, rawStreamContents);
-                console.log(`JPEG image saved as ${imageName}`);
-                imageCounter++;
+                imageName = `image_${imageCounter}.jpg`;
+            } else if (rawStreamContents.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
+                imageName = `image_${imageCounter}.png`;
+            } else {
+                return; // Skip non-image streams
             }
-
-            // Check if it's a PNG image
-            else if (rawStreamContents.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
-                const imageName = `image_${imageCounter}.png`;
-                fs.writeFileSync(imageName, rawStreamContents);
-                console.log(`PNG image saved as ${imageName}`);
-                imageCounter++;
+    
+            // Save the image
+            fs.writeFileSync(imageName, rawStreamContents);
+            console.log(`Image saved as ${imageName}`);
+            imageCounter++;
+    
+            // Read the image and check for QR codes
+            try {
+                const image = await Jimp.read(imageName);
+                
+                const qr = new qrCodeReader();
+    
+                qr.callback = (err, value) => {
+                    if (err) {
+                        console.error('Error reading QR code:', err);
+                    } else {
+                        if (value && value.result) {
+                            console.log('QR Code detected:', value.result);
+                        } else {
+                            console.log('No QR code detected in the image.');
+                        }
+                    }
+                };
+    
+                qr.decode(image.bitmap);
+            } catch (err) {
+                console.error('Error processing image:', err);
             }
         }
     });
 
     //if there is a header and footer, it is only detected once
     console.log('Number of images:', imageCounter);
-
-
-
 })
 
 //SIGNATURE LOG
