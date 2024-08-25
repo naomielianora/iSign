@@ -10,18 +10,32 @@
 <body>
     <div class="overlay"></div>
 
-    <!-- POP UP VERIFIED -->
+    <!-- POP UP BOTH VERIFIED -->
     <div id = "pop-up-verified" class = "pop-up">
         <img src = "/assets/verified.png" width = 100px>
-        <p>Verified</p>
-        <button type="button" class="backPopup" id = "verified-back">Back</button>
+        <p>Document and signature is verified</p>
+        <button type="button" class="backPopup">Back</button>
     </div>
 
-    <!-- POP UP NOT VERIFIED -->
-    <div id = "pop-up-not-verified" class = "pop-up">
+    <!-- POP UP DOCUMENT NOT VERIFIED -->
+    <div id = "pop-up-doc-not-verified" class = "pop-up">
         <img src = "/assets/not-verified.png" width = 100px>
-        <p>Not Verified</p>
-        <button type="button" class="backPopup" id = "not-verified-back">Back</button>
+        <p>Document has been changed</p>
+        <button type="button" class="backPopup">Back</button>
+    </div>
+
+    <!-- POP UP SIGNATURE NOT VERIFIED -->
+    <div id = "pop-up-sig-not-verified" class = "pop-up">
+        <img src = "/assets/not-verified.png" width = 100px>
+        <p>Signature is not verified</p>
+        <button type="button" class="backPopup">Back</button>
+    </div>
+
+    <!-- POP UP BOTH NOT VERIFIED -->
+    <div id = "pop-up-both-not-verified" class = "pop-up">
+        <img src = "/assets/not-verified.png" width = 100px>
+        <p>Document has been changed and signature is not verified</p>
+        <button type="button" class="backPopup">Back</button>
     </div>
 
     <!-- Jika page ini diakses oleh user blm login, tampilkan header public -->
@@ -49,6 +63,12 @@
                     <div id="checkButtonDiv">
                         <button id="checkButton" type = "button">CHECK</button>
                     </div>
+
+                    <% if (no_sig_qr_alert) { %>
+                        <div class = "noQR_warning">
+                            *QR Code Digital Signature tidak terdeteksi
+                        </div>
+                    <% }%>
                 </div>
             </form>
         </div>

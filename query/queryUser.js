@@ -1,10 +1,10 @@
 import { dbConnect } from "./connectionDB.js";
 
 //untuk mengambil public key dari user yang ingin dicek ttdnya
-export const getSignerPublicKey = async(username) => {
+export const getSignerPublicKey = async(nama_lengkap) => {
     const conn = await dbConnect();
     return new Promise((resolve, reject) => {
-        conn.query('SELECT public_key FROM user WHERE username = ?', [username], (err, result) => {
+        conn.query('SELECT public_key FROM user WHERE nama_lengkap = ?', [nama_lengkap], (err, result) => {
             if(err){
                 reject (err);
             }

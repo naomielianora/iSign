@@ -324,76 +324,174 @@ app.post('/sign_doc', auth,  upload.single('surat'),async(req, res) => {
     }
 });
 
+//alert tidak ada qr code signature yg terdeteksi
+let no_sig_qr_alert = false;
+
 //CHECK A SIGNATURE FORM
 app.get('/check_sign', auth, (req, res)=>{
     res.render('check_sign', {
         id_user: req.session.id_user || 0,
         nama_lengkap: req.session.nama_lengkap || "",
+        no_sig_qr_alert
     })
+    no_sig_qr_alert = false;
 })
-
-
 
 //CHECK SIGNATURE AND DOCUMENT
 app.post('/check_sign', auth, upload.single('surat'), async(req, res)=>{
-    //ambil no surat yang diinput
-    let no_surat = req.body.no_surat;
+    let pdfBuffer = req.file.buffer;
 
     // Load the existing PDF from buffer
-    const pdfDoc = await PDFDocument.load(req.file.buffer);
+    const pdfDoc = await PDFDocument.load(pdfBuffer);
 
-    let imageCounter = 0;
-    let qrCodeFound = false;
+    //ada brp image qr di pdf
+    let sig_qr_counter = 0;
+    
+    // Get all indirect objects
+    const indirectObjects = pdfDoc.context.indirectObjects;
 
-    pdfDoc.context.indirectObjects.forEach(async (object, ref) => {
+    let qr_name;
+    let qr_signatureHash;
+    let qr_documentHash;
+
+    //looping tiap object
+    for (const [ref, object] of indirectObjects) {
+        //hanya ambil yg PDFRawStream
         if (object instanceof PDFRawStream) {
-            console.log('Found a PDFRawStream:', object);
-    
-            // Extract the content buffer from the PDFRawStream
             const rawStreamContents = object.contents;
-    
-            // Define file name based on the content type
-            let imageName;
-            if (rawStreamContents.slice(0, 3).equals(Buffer.from([0xFF, 0xD8, 0xFF]))) {
-                imageName = `image_${imageCounter}.jpg`;
-            } else if (rawStreamContents.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
-                imageName = `image_${imageCounter}.png`;
-            } else {
-                return; // Skip non-image streams
-            }
-    
-            // Save the image
-            fs.writeFileSync(imageName, rawStreamContents);
-            console.log(`Image saved as ${imageName}`);
-            imageCounter++;
-    
-            // Read the image and check for QR codes
-            try {
-                const image = await Jimp.read(imageName);
-                
-                const qr = new qrCodeReader();
-    
-                qr.callback = (err, value) => {
-                    if (err) {
-                        console.error('Error reading QR code:', err);
-                    } else {
-                        if (value && value.result) {
-                            console.log('QR Code detected:', value.result);
+            //cek apakah dia jpg/png
+            if (rawStreamContents.slice(0, 3).equals(Buffer.from([0xFF, 0xD8, 0xFF])) || 
+                rawStreamContents.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
+
+                try {
+                    const image = await Jimp.read(rawStreamContents);
+                    const qr = new qrCodeReader();
+
+                    const qrCodeResult = await new Promise((resolve, reject) => {
+                        qr.callback = (err, value) => {
+                            //jika image bkn qr code
+                            if (err) {
+                                resolve(null);
+                            } else {
+                                resolve(value);
+                            }
+                        };
+                        qr.decode(image.bitmap);
+                    });
+
+                    if (qrCodeResult && qrCodeResult.result) {
+                        console.log('QR Code detected:', qrCodeResult.result);
+                        const match = qrCodeResult.result.match(/^SIGNED BY:\s*(.+?)\s*SIGNATURE:\s*([\s\S]+?)\s*DOCUMENT:\s*([\s\S]+)$/);
+
+                        if (match) {
+                            //pisahkan isi dari digital signature
+                            qr_name = match[1];
+                            qr_signatureHash = match[2];
+                            qr_documentHash = match[3];
+                        
+                            console.log(`Valid QR Code Template Detected!`);
+                            console.log(`Name: ${qr_name}`);
+                            console.log(`Signature Hash: ${qr_signatureHash}`);
+                            console.log(`Document Hash: ${qr_documentHash}`);
+                            sig_qr_counter++;
                         } else {
-                            console.log('No QR code detected in the image.');
+                            console.log('QR Code does not match the expected template.');
                         }
                     }
-                };
-    
-                qr.decode(image.bitmap);
-            } catch (err) {
-                console.error('Error processing image:', err);
+                } catch (err) {
+                    console.error('Error processing image:', err);
+                }
             }
         }
-    });
+    }
 
-    //if there is a header and footer, it is only detected once
-    console.log('Number of images:', imageCounter);
+    //jika tidak ada qr code digital signature
+    if (sig_qr_counter == 0) {
+        console.log('Tidak terdeteksi adanya QR Code digital signature pada dokumen');
+        no_sig_qr_alert = true;
+        //kosongkan buffer
+        req.file.buffer = null;
+        res.redirect('/check_sign');
+    }
+    //JIKA ADA DIGITAL SIGNATURE, LANJUTKAN PROSES SELANJUTNYA
+    else{
+        console.log("Ditemukan digital signature");
+
+        //VERIFICATION ISI SURAT 
+
+        //membaca isi dari pdf dan return textnya
+        const parseBuffer = () => new Promise((resolve, reject) => {
+            new PdfReader().parseBuffer(pdfBuffer, (err, item) => {
+                if (err) {
+                    reject(err);
+                } else if (!item) {
+                    resolve(extractedText);
+                } else if (item.text) {
+                    extractedText += item.text;
+                }
+            });
+        });
+        let extractedText = '';
+        extractedText = await parseBuffer();
+        console.log("Extracted text from pdf:")
+        console.log(extractedText);
+
+        //hash isi dari pdf
+        const hash = crypto.createHash('sha256');
+        hash.update(extractedText);
+        const hashedText = hash.digest('base64');
+
+        let DocumentValid = false;
+        if(hashedText === qr_documentHash){
+            DocumentValid = true;
+        }
+
+        //VERIFICATION DIGITAL SIGNATURE
+
+        //ambil no surat yang diinput
+        let no_surat = req.body.no_surat;
+        //ambil public key dari nama lengkap yang tertera di QR
+        let public_key = await getSignerPublicKey(qr_name);
+
+        function verifyDigitalSignature(no_surat, signature, publicKeyPem) {
+            try{
+                //public key user yang username nya terdapat di QR
+                const publicKey = forge.pki.publicKeyFromPem(publicKeyPem);
+            
+                //hash no surat dengan sha256
+                const md = forge.md.sha256.create();
+                md.update(no_surat, 'utf-8');
+            
+                //decode signature
+                const decodedSignature = forge.util.decode64(signature);
+                //Verify signature menggunakan public key (akan return true jika valid dan false jika tidak valid)
+                const isValid = publicKey.verify(md.digest().getBytes(), decodedSignature);
+                return isValid;
+            }
+            catch (error) {
+                // jika QR is corrupted by other username that exist in db (the public key is not match)
+                return false; 
+            }
+        }
+
+        let SignatureValid;
+        // jika QR is corrupted by username that does not exist in db
+        if(public_key[0] == undefined){
+            isValidSignature = false
+        }else{
+            // Verify the digital signature
+            SignatureValid = verifyDigitalSignature(
+                no_surat,
+                qr_signatureHash,
+                public_key[0].public_key
+            );
+        }
+
+        //kirim data ke client apakah signature dan/atau doc valid atau tidak dan tampilkan pop up yang sesuai
+        res.json({ SignatureValid, DocumentValid });
+    }
+    //kosongkan buffer  
+    req.file.buffer = null;
 })
 
 //SIGNATURE LOG
