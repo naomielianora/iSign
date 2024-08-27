@@ -73,3 +73,18 @@ th, td {
 #log_hash{
     max-width: 600px;
 }
+
+#log_download{
+    max-width: 200px;
+}
+
+#downloadButton{
+    font-family: Bold;
+    color: white;
+    padding: 7px;
+    background-color: #1A2C56;
+    border-radius: 15px;
+    width: 140px;
+    text-align: center;
+    text-decoration: none;
+}

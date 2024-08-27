@@ -38,6 +38,13 @@
         <button type="button" class="backPopup">Back</button>
     </div>
 
+    <!-- POP UP NO QR CODE DETECTED -->
+    <div id = "pop-up-no-qr-code" class = "pop-up">
+        <img src = "/assets/not-verified.png" width = 100px>
+        <p>No Digital Signature QR Code detected in the document</p>
+        <button type="button" class="backPopup">Back</button>
+    </div>
+
     <!-- Jika page ini diakses oleh user blm login, tampilkan header public -->
     <% if(id_user === 0){ %>
         <%- include('./layout/public_header.ejs') %>
@@ -63,12 +70,6 @@
                     <div id="checkButtonDiv">
                         <button id="checkButton" type = "button">CHECK</button>
                     </div>
-
-                    <% if (no_sig_qr_alert) { %>
-                        <div class = "noQR_warning">
-                            *QR Code Digital Signature tidak terdeteksi
-                        </div>
-                    <% }%>
                 </div>
             </form>
         </div>

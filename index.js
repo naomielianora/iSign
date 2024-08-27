@@ -324,17 +324,13 @@ app.post('/sign_doc', auth,  upload.single('surat'),async(req, res) => {
     }
 });
 
-//alert tidak ada qr code signature yg terdeteksi
-let no_sig_qr_alert = false;
 
 //CHECK A SIGNATURE FORM
 app.get('/check_sign', auth, (req, res)=>{
     res.render('check_sign', {
         id_user: req.session.id_user || 0,
-        nama_lengkap: req.session.nama_lengkap || "",
-        no_sig_qr_alert
+        nama_lengkap: req.session.nama_lengkap || ""
     })
-    no_sig_qr_alert = false;
 })
 
 //CHECK SIGNATURE AND DOCUMENT
@@ -396,6 +392,7 @@ app.post('/check_sign', auth, upload.single('surat'), async(req, res)=>{
                             sig_qr_counter++;
                         } else {
                             console.log('QR Code does not match the expected template.');
+                            return res.json({ noQRCode : true });
                         }
                     }
                 } catch (err) {
@@ -408,13 +405,13 @@ app.post('/check_sign', auth, upload.single('surat'), async(req, res)=>{
     //jika tidak ada qr code digital signature
     if (sig_qr_counter == 0) {
         console.log('Tidak terdeteksi adanya QR Code digital signature pada dokumen');
-        no_sig_qr_alert = true;
         //kosongkan buffer
         req.file.buffer = null;
-        res.redirect('/check_sign');
+        return res.json({ noQRCode : true });
+
     }
     //JIKA ADA DIGITAL SIGNATURE, LANJUTKAN PROSES SELANJUTNYA
-    else{
+    
         console.log("Ditemukan digital signature");
 
         //VERIFICATION ISI SURAT 
@@ -489,7 +486,9 @@ app.post('/check_sign', auth, upload.single('surat'), async(req, res)=>{
 
         //kirim data ke client apakah signature dan/atau doc valid atau tidak dan tampilkan pop up yang sesuai
         res.json({ SignatureValid, DocumentValid });
-    }
+
+        
+    
     //kosongkan buffer  
     req.file.buffer = null;
 })

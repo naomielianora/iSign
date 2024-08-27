@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const sig_notVerifiedPopup = document.getElementById('pop-up-sig-not-verified');
     //ambil pop up both not verified
     const both_notVerifiedPopup = document.getElementById('pop-up-both-not-verified');
+    //ambil pop up both not verified
+    const noQRPopup = document.getElementById('pop-up-no-qr-code');
 
 
     //overlay untuk membuat halaman di belakangnya abu saat pop up muncul
@@ -45,20 +47,27 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(response => response.json())
         .then(data => {
-            overlay.style.display = 'block';
-            // Check the response and show the appropriate pop-up
-            if (data.SignatureValid === true && data.DocumentValid === true) {
-                verifiedPopup.classList.add('show');
-            } 
-            else if (data.SignatureValid === true && data.DocumentValid === false) {
-                doc_notVerifiedPopup.classList.add('show');
-            } 
-            else if (data.SignatureValid === false && data.DocumentValid === true) {
-                sig_notVerifiedPopup.classList.add('show');
+            if (data.noQRCode) {
+                overlay.style.display = 'block';
+                noQRPopup.classList.add('show');
             }
-            else {
-                both_notVerifiedPopup.classList.add('show');
+            else{
+                overlay.style.display = 'block';
+                // Check the response and show the appropriate pop-up
+                if (data.SignatureValid === true && data.DocumentValid === true) {
+                    verifiedPopup.classList.add('show');
+                } 
+                else if (data.SignatureValid === true && data.DocumentValid === false) {
+                    doc_notVerifiedPopup.classList.add('show');
+                } 
+                else if (data.SignatureValid === false && data.DocumentValid === true) {
+                    sig_notVerifiedPopup.classList.add('show');
+                }
+                else {
+                    both_notVerifiedPopup.classList.add('show');
+                }
             }
+            
         })
         .catch(error => console.error('Error:', error));
         

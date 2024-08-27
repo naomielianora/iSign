@@ -8,7 +8,28 @@
     <link rel="stylesheet" type="text/css" href="/css/signature_log.css">
 </head>
 <body>
+    <script>
+        function downloadQRCode(qrCodeData, noSurat, namaLengkap) {
+            // Create a temporary link element
+            const link = document.createElement('a');
+            link.href = qrCodeData;
+            link.download = noSurat + ' - ' + namaLengkap + '.jpg'; // Set the default file name
+
+            // Append the link to the document body (necessary for some browsers)
+            document.body.appendChild(link);
+
+            // Programmatically click the link to trigger the download
+            link.click();
+
+            // Remove the link from the document
+            document.body.removeChild(link);
+        }
+
+
+    </script>
+
     <%- include('./layout/user_header.ejs') %>
+
     <div id="log_content">
         <h1 id="log">Your Signature Log</h1>
         <div id="log_content">
@@ -17,7 +38,7 @@
                     <th id="log_no">No.</th>
                     <th id="log_tanggal">Tanggal</th>
                     <th id="log_nomor">Nomor Surat</th>
-                    <th id="log_hash">QR Code</th>
+                    <th id="log_hash" colspan = "2">QR Code</th>
                 </thead>
                 <tbody id="log_tab_row">
                     <% for (let i = 0; i < sigLog.length; i++) { %>
@@ -28,8 +49,12 @@
                             <td id="log_hash">
                                 <img src="<%= sigLog[i].qr_code %>" alt="QR Code" width="100" height="100">
                             </td>
+                            <td id="log_download">
+                                <button id="downloadButton" onclick="downloadQRCode('<%= sigLog[i].qr_code %>', '<%= sigLog[i].no_surat %>', '<%= nama_lengkap %>')">Download</button>
+                            </td>
                         </tr>
                     <% } %>
+                    
                 </tbody>
             </table>
         </div>
