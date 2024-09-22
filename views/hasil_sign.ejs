@@ -27,6 +27,16 @@
             // Remove the link from the document
             document.body.removeChild(link);
         }
+
+        function downloadPDF() {
+            const pdfData = '<%- modifiedPDF %>';
+            const link = document.createElement('a');
+            link.href = pdfData;
+            link.download = '<%- no_surat %> - <%- nama_lengkap %>.pdf';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     </script>
 
     
@@ -37,7 +47,9 @@
             <div id="containerText">
                 <img src="<%- qrCodeData %>" alt="QR Code" width = 200px height = 200px>
 
-                <button id="downloadButton" onclick="downloadQRCode('<%- qrCodeData %>')" > Download </button>
+                <button id="downloadButton" onclick="downloadQRCode()" > Download QR </button>
+
+                
             </div>
         </div>
     </div>
