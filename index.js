@@ -92,17 +92,22 @@ app.post('/sign_up', function(req, res) {
     let pass_input = req.body.pass_public;
     let password_sign_up = crypto.createHash('sha256').update(pass_input).digest('base64');
 
-    //GENERATE RSA KEY PAIR FOR NEW USER (menggunakan algoritma RSA)
+    //GENERATE RSA KEY PAIR FOR NEW USER
     const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
     const publicKey = forge.pki.publicKeyToPem(keyPair.publicKey);
     const privateKey = forge.pki.privateKeyToPem(keyPair.privateKey);
 
     //ENKRIPSI PRIVATE KEY
-    //menggunakan salt untuk memastikan bahwa password yg sama bisa menghasilkan hasil yg berbeda (harus unik untuk tiap user)
+    //Pembuatan Salt (untuk memastikan bahwa proses derivasi key dari password menghasilkan key yang unik, meskipun pengguna memiliki password yang sama)
+    //ukuran 16 bytes (129 bits)
     const salt = crypto.randomBytes(16);
 
-    //membuat key untuk enkripsi 
-    const key = deriveKeyFromPassword(pass_input, salt);
+    //Membuat kunci untuk enkripsi menggunakan password user dan salt 
+    //Menggunakan algoritma PBKDF2 (Password-Based Key Derivation Function 2) untuk mengubah password pengguna menjadi kunci enkripsi.
+    //Salt dan password digunakan untuk menghasilkan kunci derivasi yang unik.
+    //Proses ini dilakukan dengan 100,000 iterasi untuk menambah keamanan terhadap serangan brute-force.
+    //Kunci yang dihasilkan memiliki panjang 32 byte (256 bit)
+    const key = crypto.pbkdf2Sync(pass_input, salt, 100000, 32, 'sha256');
 
     //menggunakan IV (Initialization Vector) untuk memastikan setiap enkripsi menghasilkan ciphertext yang berbeda meskipun plaintext yang dienkripsi sama. Length: 16 bytes (128 bits)
     const iv = crypto.randomBytes(16);
@@ -249,13 +254,15 @@ app.post('/sign_doc', auth,  upload.single('surat'),async(req, res) => {
 
         //CREATE DIGITAL SIGNATURE (menggunakan nomor surat)
         const privateKey = forge.pki.privateKeyFromPem(decryptedPrivateKey);
+
+        //NO SURAT DI HASHED
         //nomor surat dihash (menjadi message digest)
         const md = forge.md.sha256.create();
         md.update(no_surat, 'utf8'); 
         //sign menggunakan private key
         const signature = forge.util.encode64(privateKey.sign(md));
 
-        //HASH ISI SURAT
+        //HASH ISI SURAT 
 
         //ambil file pdf dari buffer
         const pdfBuffer = req.file.buffer;

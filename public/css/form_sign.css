@@ -14,9 +14,15 @@
 }
 
 html, body{
-    width: 100%;
+    background-image: url("../assets/bg1.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     height: 100%;
-    background-color: #366AB2;
+    width: 100vw;
+    margin: 0;
+    padding: 0;
 }
 
 #outer{
@@ -33,7 +39,7 @@ html, body{
 }
 
 h1{
-    color: white;
+    color: #1A2C56;
     font-family: Bold;
     text-align: center;
 }
