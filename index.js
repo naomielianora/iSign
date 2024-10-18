@@ -317,33 +317,11 @@ app.post('/sign_doc', auth,  upload.single('surat'),async(req, res) => {
         //insert hasil dari signature ke database
         await insertSigLog(no_surat, final_signature, qrCodeData, current_date, req.session.id_user);
 
-        //Insert qr code ke page baru
-        // Load the existing PDF from buffer
-        const pdfDoc = await PDFDocument.load(pdfBuffer);
-
-        // Add a blank page to the end of the PDF
-        const qrCodePage = pdfDoc.addPage([600, 400]);
-
-        // Embed the QR code image into the new page
-        const qrCodeImageEmbed = await pdfDoc.embedJpg(jpgBuffer);
-
-        // Draw the QR code on the new page
-        qrCodePage.drawImage(qrCodeImageEmbed, {
-            x: 150,
-            y: 150,
-            width: 300,
-            height: 300,
-        });
-
-        // Save the modified PDF
-        const modifiedPdfBytes = await pdfDoc.save();
-
         res.render('hasil_sign', {
             nama_lengkap: req.session.nama_lengkap || "",
             digitalSignature: final_signature,
             qrCodeData,
-            no_surat,
-            modifiedPDF: `data:application/pdf;base64,${modifiedPdfBytes.toString('base64')}`
+            no_surat
         });
 
     } catch (error) {
@@ -354,7 +332,7 @@ app.post('/sign_doc', auth,  upload.single('surat'),async(req, res) => {
 
 
 //CHECK A SIGNATURE FORM
-app.get('/check_sign', auth, (req, res)=>{
+app.get('/check_sign', (req, res)=>{
     res.render('check_sign', {
         id_user: req.session.id_user || 0,
         nama_lengkap: req.session.nama_lengkap || ""
@@ -362,7 +340,7 @@ app.get('/check_sign', auth, (req, res)=>{
 })
 
 //CHECK SIGNATURE AND DOCUMENT
-app.post('/check_sign', auth, upload.single('surat'), async(req, res)=>{
+app.post('/check_sign', upload.single('surat'), async(req, res)=>{
     let pdfBuffer = req.file.buffer;
 
     // Load the existing PDF from buffer

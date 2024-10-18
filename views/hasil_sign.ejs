@@ -27,16 +27,6 @@
             // Remove the link from the document
             document.body.removeChild(link);
         }
-
-        function downloadPDF() {
-            const pdfData = '<%- modifiedPDF %>';
-            const link = document.createElement('a');
-            link.href = pdfData;
-            link.download = '<%- no_surat %> - <%- nama_lengkap %>.pdf';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
     </script>
 
     
