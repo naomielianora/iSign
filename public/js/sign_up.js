@@ -3,18 +3,25 @@ document.addEventListener('DOMContentLoaded', function () {
     let passwordInput = document.getElementById('password');
     let confirmPasswordInput = document.getElementById('confirm_password');
 
-    //untuk memeriksa apakah user telah menginput password
+    //untuk memeriksa apakah user telah menginput password dengan benar
     passwordInput.addEventListener('input', function () {
-        let password = passwordInput.value;
-        
-        //jika sudah diisi, jadikan text input menjadi hijau (valid)
-        if (password.length > 0) {
-            passwordInput.style.backgroundColor = "green"
-        } 
-        //jika belum diisi, jadikan text input menjadi merah (invalid)
-        else {
-            passwordInput.style.backgroundColor = "red"
-        }
+      let password = passwordInput.value;
+      let passwordWarning = document.getElementById('password_notvalid');
+
+      // Aturan validasi password
+      let minLength = password.length >= 8; // Panjang minimum 8 karakter
+      let hasUppercase = /[A-Z]/.test(password); // Harus ada huruf besar
+      let hasLowercase = /[a-z]/.test(password); // Harus ada huruf kecil
+      let hasNumber = /[0-9]/.test(password); // Harus ada angka
+
+      // Jika password memenuhi semua aturan
+      if (minLength && hasUppercase && hasLowercase && hasNumber) {
+          passwordWarning.classList.add("hidden");
+      } 
+      // Jika password tidak valid, tampilkan warning
+      else {
+          passwordWarning.classList.remove("hidden");
+      }
     });
 
     //untuk memeriksa apakah user telah memasukan password yang sama pada text box "confirm password"
@@ -26,12 +33,10 @@ document.addEventListener('DOMContentLoaded', function () {
         //jika tidak sama, maka munculkan pesan warning, dan jadikan text input menjadi merah (invalid)
         if (password !== confirmPassword) {
             passwordWarning.classList.remove("hidden");
-            confirmPasswordInput.style.backgroundColor = "red"
         } 
         //jika sudah sama, maka hilangkan pesan warning, dan jadikan text input menjadi hijau (valid)
         else {
             passwordWarning.classList.add("hidden");
-            confirmPasswordInput.style.backgroundColor = "green"
         }
     });
 
@@ -42,23 +47,6 @@ document.addEventListener('DOMContentLoaded', function () {
     emailInput.addEventListener('input', function () {
       let emailInput = this.value;
       checkEmailAvailability(emailInput);
-    });
-
-
-    //ambil nama lengkap yang diinput user
-    let namalengkapInput = document.getElementById('nama_lengkap');
-    //untuk memeriksa apakah user telah menginput nama lengkapnya
-    namalengkapInput.addEventListener('input', function () {
-        let nama_lengkap = namalengkapInput.value;
-        
-        //jika sudah diisi, jadikan text input menjadi hijau (valid)
-        if (nama_lengkap.length > 0) {
-            namalengkapInput.style.backgroundColor = "green"
-        } 
-        //jika belum diisi, jadikan text input menjadi merah (invalid)
-        else {
-            namalengkapInput.style.backgroundColor = "red"
-        }
     });
 
     let submitButton = document.getElementById('submit_button');
@@ -73,8 +61,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
-
-
 
 //mengirim email yg diinput ke server (index.js)
 async function checkEmailAvailability(inputed_email) {
@@ -101,44 +87,35 @@ function validateEmail(email) {
 }
 
 function updateEmailInput(emailAvailable, isValidEmail) {
-  let emailInput = document.getElementById('email');
   let emailWarning_taken = document.getElementById('email_warning_taken');
   let emailWarning_notvalid = document.getElementById('email_warning_notvalid');
   emailWarning_taken.classList.add("hidden");
   emailWarning_notvalid.classList.add("hidden");
-  //jika email unik & sesuai dengan pattern email, maka text input menjadi hijau (valid)
-  if (emailAvailable && isValidEmail) {
-      emailInput.style.backgroundColor = "green"
 
-  } else {
-      //jika email tidak unik, maka munculkan warning
-    if (!emailAvailable) {
-      emailWarning_taken.classList.remove("hidden");
-    }
-    //jika email tidak valid, maka munculkan warning
-    if (!isValidEmail) {
-      emailWarning_notvalid.classList.remove("hidden");
-    }
-      //text input menjadi merah (invalid)
-      emailInput.style.backgroundColor = "red"
+  //jika email tidak unik, maka munculkan warning
+  if (!emailAvailable) {
+    emailWarning_taken.classList.remove("hidden");
   }
-
+  //jika email tidak valid, maka munculkan warning
+  if (!isValidEmail) {
+    emailWarning_notvalid.classList.remove("hidden");
+  }
 }
 
-//untuk memeriksa apakah semua input sudah valid (berwarna hijau)
+//untuk mengecek apakah semua input sudah valid
 function checkAllFieldsValid() {
-    let allValid = true;
-    const inputFields = document.querySelectorAll('input');
-    //mengecek semua text input
-    for (let i = 0; i < inputFields.length; i++) {
-      const computedStyle = getComputedStyle(inputFields[i]);
-      const backgroundColor = computedStyle.backgroundColor;
-      if (backgroundColor != "rgb(0, 128, 0)") {
-        allValid = false;
-      }
+  const warnings = document.querySelectorAll('.warning');
+    for (let i = 0; i < warnings.length; i++) {
+        //untuk warning di bawah tombol submit jangan dicek
+        if (warnings[i].id === 'submit_warning') {
+            continue;
+        }
+        if (!warnings[i].classList.contains('hidden')) {
+            return false; //ada warning yang blm resolved
+        }
     }
-    return allValid;
-  }
+    return true; //semua input sudah valid, user dapat didaftarkan
+}
 
 
 

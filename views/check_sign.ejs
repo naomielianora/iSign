@@ -45,6 +45,13 @@
         <button type="button" class="backPopup">Back</button>
     </div>
 
+    <!-- POP UP NO DOCUMENT DETECTED -->
+    <div id = "pop-up-missing-input" class = "pop-up">
+        <img src = "/assets/not-verified.png" width = 100px>
+        <p>No Document Uploaded</p>
+        <button type="button" class="backPopup">Back</button>
+    </div>
+
     <!-- Jika page ini diakses oleh user blm login, tampilkan header public -->
     <% if(id_user === 0){ %>
         <%- include('./layout/public_header.ejs') %>
@@ -70,6 +77,12 @@
                     <div id="checkButtonDiv">
                         <button id="checkButton" type = "button">CHECK</button>
                     </div>
+
+                    <div id="loading" class="hidden">
+                        <div class="spinner"></div>
+                        <p>Loading...</p>
+                    </div>
+                    
                 </div>
             </form>
         </div>

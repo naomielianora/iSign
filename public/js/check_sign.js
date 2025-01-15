@@ -1,45 +1,61 @@
 document.addEventListener('DOMContentLoaded', function () {
-            
-    //ambil pop up both verified
-    const verifiedPopup = document.getElementById('pop-up-verified');
-    //ambil pop up doc not verified
-    const doc_notVerifiedPopup = document.getElementById('pop-up-doc-not-verified');
-    //ambil pop up sig not verified
-    const sig_notVerifiedPopup = document.getElementById('pop-up-sig-not-verified');
-    //ambil pop up both not verified
-    const both_notVerifiedPopup = document.getElementById('pop-up-both-not-verified');
-    //ambil pop up both not verified
-    const noQRPopup = document.getElementById('pop-up-no-qr-code');
 
+    // Fungsi untuk menampilkan overlay dan pop-up berdasarkan kondisi
+    function showPopup(type) {
+        const overlay = document.querySelector('.overlay');
+        const popups = {
+            "verified": document.getElementById('pop-up-verified'),
+            "doc_not_verified": document.getElementById('pop-up-doc-not-verified'),
+            "sig_not_verified": document.getElementById('pop-up-sig-not-verified'),
+            "both_not_verified": document.getElementById('pop-up-both-not-verified'),
+            "no_qr": document.getElementById('pop-up-no-qr-code'),
+            "missing_input": document.getElementById('pop-up-missing-input')
+        };
 
-    //overlay untuk membuat halaman di belakangnya abu saat pop up muncul
-    const overlay = document.querySelector('.overlay');
+        overlay.style.display = 'block';
+        if (popups[type]) {
+            popups[type].classList.add('show');
+        }
+    }
 
-    // Get all buttons with the class 'backPopup'
-    const backPopupButtons = document.querySelectorAll('.backPopup');
-
-    // Loop through each button and add an event listener
-    backPopupButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            // Hide the overlay and remove 'show' class from all popups
-            overlay.style.display = 'none';
-            document.querySelectorAll('.pop-up').forEach(popup => {
-                popup.classList.remove('show');
-            });
+    // Fungsi untuk menyembunyikan overlay dan semua pop-up
+    function hideAllPopups() {
+        const overlay = document.querySelector('.overlay');
+        overlay.style.display = 'none';
+        document.querySelectorAll('.pop-up').forEach(popup => {
+            popup.classList.remove('show');
         });
+    }
+
+    // Event listener untuk tombol "Back" di setiap pop-up
+    const backPopupButtons = document.querySelectorAll('.backPopup');
+    backPopupButtons.forEach(button => {
+        button.addEventListener('click', hideAllPopups);
     });
 
-    //ambil button "submit" yang ada di pop up
-    const checkButton = document.getElementById('checkButton');
-
-    //jika tombol "submit" di pop up di klik
-    checkButton.addEventListener('click', function () {
+    // Fungsi untuk menangani klik tombol "CHECK"
+    function handleCheckButtonClick() {
         const noSuratInput = document.getElementById('no_surat').value;
         const suratInput = document.getElementById('surat').files[0];
+
+        // Periksa apakah input tidak kosong
+        if (!noSuratInput || !suratInput) {
+            showPopup("missing_input");
+            return;
+        }
 
         const formData = new FormData();
         formData.append('no_surat', noSuratInput);
         formData.append('surat', suratInput);
+
+        const loading = document.getElementById('loading');
+
+        // Cegah loading spinner bertumpuk
+        if (!loading.classList.contains('hidden')) {
+            return; // Jika loading sudah ditampilkan, jangan lakukan apa-apa
+        }
+
+        loading.classList.remove('hidden'); // Tampilkan animasi loading
 
         fetch('/check_sign', {
             method: 'POST',
@@ -47,29 +63,28 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(response => response.json())
         .then(data => {
+            loading.classList.add('hidden'); // Sembunyikan loading
+
+            // Tampilkan pop-up yang sesuai
             if (data.noQRCode) {
-                overlay.style.display = 'block';
-                noQRPopup.classList.add('show');
+                showPopup("no_qr");
+            } else if (data.SignatureValid && data.DocumentValid) {
+                showPopup("verified");
+            } else if (data.SignatureValid && !data.DocumentValid) {
+                showPopup("doc_not_verified");
+            } else if (!data.SignatureValid && data.DocumentValid) {
+                showPopup("sig_not_verified");
+            } else {
+                showPopup("both_not_verified");
             }
-            else{
-                overlay.style.display = 'block';
-                // Check the response and show the appropriate pop-up
-                if (data.SignatureValid === true && data.DocumentValid === true) {
-                    verifiedPopup.classList.add('show');
-                } 
-                else if (data.SignatureValid === true && data.DocumentValid === false) {
-                    doc_notVerifiedPopup.classList.add('show');
-                } 
-                else if (data.SignatureValid === false && data.DocumentValid === true) {
-                    sig_notVerifiedPopup.classList.add('show');
-                }
-                else {
-                    both_notVerifiedPopup.classList.add('show');
-                }
-            }
-            
         })
-        .catch(error => console.error('Error:', error));
-        
-    });
+        .catch(error => {
+            loading.classList.add('hidden'); // Sembunyikan loading jika terjadi error
+            console.error('Error:', error);
+        });
+    }
+
+    // Pasangkan event listener pada tombol "CHECK"
+    const checkButton = document.getElementById('checkButton');
+    checkButton.addEventListener('click', handleCheckButtonClick);
 });

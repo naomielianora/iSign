@@ -29,10 +29,14 @@
                 
                 <input type="password" class = "input_pass_signup" name = "pass_public" placeholder="Password" id = "password" required>
 
+                <div class = "warning hidden" id = "password_notvalid">
+                    *Password must be at least 8 characters,<br>with uppercase, lowercase, and a number 
+                </div>
+
                 <input type="password" class = "input_pass_conf_signup" name = "conf_pass_public" id = "confirm_password" placeholder="Confirm Password" required>
 
                 <div class = "warning hidden" id = "password_warning">
-                    *password is not the same
+                    *Password is not the same
                 </div>
 
                 <button class = "blue_button" id = 'submit_button'>Sign Up</button>
@@ -45,6 +49,7 @@
         
         <div class = "already_account">
             Already have an account? <a href="/log_in" class = "log_in">Log In</a>
+        </div>
     </div>
 </body>
 </html>
