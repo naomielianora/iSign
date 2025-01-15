@@ -4,24 +4,21 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ISIGN_SIGNATURE_LOG</title>
+    <title>Signature Log</title>
     <link rel="stylesheet" type="text/css" href="/css/signature_log.css">
 </head>
 <body>
     <script>
         function downloadQRCode(qrCodeData, noSurat, namaLengkap) {
-            // Create a temporary link element
             const link = document.createElement('a');
             link.href = qrCodeData;
-            link.download = noSurat + ' - ' + namaLengkap + '.jpg'; // Set the default file name
-
-            // Append the link to the document body (necessary for some browsers)
+            //file name
+            link.download = noSurat + ' - ' + namaLengkap + '.jpg';
+            //add link
             document.body.appendChild(link);
-
-            // Programmatically click the link to trigger the download
+            //trigger download
             link.click();
-
-            // Remove the link from the document
+            //remove link
             document.body.removeChild(link);
         }
 
