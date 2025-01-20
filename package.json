@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/naomielianora/iSign#readme",
   "dependencies": {
+    "@zxing/library": "^0.21.3",
     "body-parser": "^1.20.2",
     "crypto": "^1.0.1",
     "ejs": "^3.1.9",
@@ -36,7 +37,10 @@
     "qrcode-reader": "^1.0.4"
   },
   "compilerOptions": {
-      "typeRoots": ["node_modules/@types", "types"],
-      "strict": true
-  }  
+    "typeRoots": [
+      "node_modules/@types",
+      "types"
+    ],
+    "strict": true
+  }
 }

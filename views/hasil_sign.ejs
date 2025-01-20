@@ -16,7 +16,11 @@
             // Create a temporary link element
             const link = document.createElement('a');
             link.href = qrCodeData;
-            link.download = '<%- no_surat %> - <%- nama_lengkap %>.jpg'; // Set the default file name
+            // Bersihkan nama file agar tidak ada karakter ilegal
+            const noSurat = '<%- no_surat %>'.replace(/[\/\\:*?"<>|]/g, '');
+            const namaLengkap = '<%- nama_lengkap %>'.replace(/[\/\\:*?"<>|]/g, '');
+            const fileName = `${noSurat} - ${namaLengkap}.jpg`;
+            link.download = fileName; // Set the default file name
 
             // Append the link to the document body (necessary for some browsers)
             document.body.appendChild(link);
