@@ -463,7 +463,7 @@ app.post('/check_sign', upload.single('surat'), async(req, res)=>{
         let SignatureValid;
         // jika QR is corrupted by username that does not exist in db
         if(public_key[0] == undefined){
-            isValidSignature = false
+            SignatureValid = false
         }else{
             // Verify the digital signature
             SignatureValid = verifyDigitalSignature(
