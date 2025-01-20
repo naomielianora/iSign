@@ -1,6 +1,6 @@
 -- HOW TO USE THIS TABLE STRUCTURE:
 -- 1. Buka phpmyadmin 
--- 2. Buat database baru dengan nama 'penelitian' (akan digunakan oleh index.js)
+-- 2. Buat database baru dengan nama 'iSign' atau dengan nama lain (namun perlu dilakukan perubahan kode pada connectionDB.js)
 -- 3. Masuk ke halaman 'Import'
 -- 4. Import file ini lalu submit
 
