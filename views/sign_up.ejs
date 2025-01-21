@@ -16,6 +16,9 @@
         <form method = "POST" action = "/sign_up">
             <div class = "content_sign_up">
                 <input type="text" class = "input_fullname_signup" name = "fullname_public" placeholder="Full Name" id = "nama_lengkap" required>
+                <div class = "warning hidden" id = "name_warning_taken">
+                    *Name is already registered, please log in
+                </div>
 
                 <input type="text" class = "input_email_signup" name = "email_public" placeholder="Email" id = "email" required>
 

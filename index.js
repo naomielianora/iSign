@@ -8,13 +8,7 @@ import QRCode from 'qrcode';
 import { PdfReader } from 'pdfreader';
 import { PDFDocument, PDFRawStream } from 'pdf-lib';
 import Jimp from 'jimp';
-import qrCodeReader from 'qrcode-reader';
-import {
-    BrowserQRCodeReader, // Use BrowserQRCodeReader instead of QRCodeReader
-} from '@zxing/library';
-import fs from 'fs'; // Import File System to manually save images
-
-
+import jsQR from 'jsqr';
 
 
 const storage = multer.memoryStorage();
@@ -23,7 +17,7 @@ const upload = multer({ storage: storage });
 const PORT = 8080;
 const app = express();
 
-import { emailChecker, signUpUser } from "./query/querySignUp.js";
+import { nameChecker, emailChecker, signUpUser } from "./query/querySignUp.js";
 import { getUserData } from "./query/queryLogin.js";
 import { getSignerPublicKey, insertSigLog, getSigLog, checkSignature } from "./query/queryUser.js";
 
@@ -146,15 +140,29 @@ app.get('/check_email', (req, res) => {
           
         res.json(response);
     });
-  })
+})
 
-  let showAlert = false;
-  app.get('/log_in', function(req, res) {
-    res.render('log_in', {
-      showAlert,
+//untuk mengecek apakah nama yg diinput user sudah ada di database
+app.get('/check_name', (req, res) => {
+    const inputed_name = req.query.inputed_name;
+    let nameTaken = true;
+    nameChecker(inputed_name).then((data) => {
+        nameTaken = (JSON.parse(JSON.stringify(data))[0]) !== undefined;
+        const response = {
+            taken: nameTaken
+          };
+          
+        res.json(response);
     });
-    showAlert = false;
-  });
+})
+
+let showAlert = false;
+app.get('/log_in', function(req, res) {
+res.render('log_in', {
+    showAlert,
+});
+showAlert = false;
+});
 
 //LOG IN USER
 app.post('/log_in', (req, res) => {
@@ -294,45 +302,30 @@ app.post('/sign_doc', auth,  upload.single('surat'),async(req, res) => {
         req.file.buffer = null;
 
         //buat template signature
-        let final_signature = 'SIGNED BY: ' + req.session.nama_lengkap + ' SIGNATURE: ' + signature + ' DOCUMENT: ' + hashedText;
+        const final_signature = 'SIGNED BY: ' + req.session.nama_lengkap + ' SIGNATURE: ' + signature + ' DOCUMENT: ' + hashedText;
 
-        // // Generate QR Code dalam format PNG
-        // const qrCodeData = await QRCode.toDataURL(final_signature, {
-        //     errorCorrectionLevel: 'L', // Koreksi error tinggi agar tetap terbaca
-        //     margin: 2, // Tambahkan margin agar lebih mudah dibaca
-        //     width: 1024, // Gunakan resolusi tinggi agar detail tetap terjaga
-        //     scale: 10,
-        //     color: {
-        //         dark: '#000000',
-        //         light: '#FFFFFF'
-        //     }
-        // });
-        
-        // const qrCodeData = await QRCode.toDataURL(final_signature);
 
         //Generate QR Code
         const qrCodePngData = await QRCode.toDataURL(final_signature, {
-            errorCorrectionLevel: 'L', // Lower error correction for simpler patterns
-            margin: 1, // Minimal margin
-            width: 256, // Size of the QR code
+            errorCorrectionLevel: 'L', 
+            margin: 1,
+            width: 256,
             color: {
-                dark: '#000000',  // QR Code color
-                light: '#FFFFFF'  // Background color
+                //warna QR Code = hitam
+                dark: '#000000', 
+                //warna background = putih
+                light: '#FFFFFF' 
             }
         });
-         // Convert the PNG data to a JPG format using Jimp
+
+        //ubah format png ke jpg
         const qrCodeImage = await Jimp.read(Buffer.from(qrCodePngData.split(',')[1], 'base64'));
-        qrCodeImage.background(0xFFFFFFFF); // Ensure the background is white
+        //memastikan warna background putih
+        qrCodeImage.background(0xFFFFFFFF);
+        //mengonversi gambar QR Code dengan kualitas tertentu agar mudah dideteksi
         const jpgBuffer = await qrCodeImage.quality(80).getBufferAsync(Jimp.MIME_JPEG);
-        // Convert the JPG buffer to a base64 string and save it in the qrCodeData variable
+        //convert data gambar ke base64 string
         const qrCodeData = `data:image/jpg;base64,${jpgBuffer.toString('base64')}`;
-
-        // Simpan ke database dalam Base64
-        console.log(qrCodeData);
-
-
-
-
 
         //insert hasil dari signature ke database
         await insertSigLog(no_surat, final_signature, qrCodeData, current_date, req.session.id_user);
@@ -361,181 +354,83 @@ app.get('/check_sign', (req, res)=>{
 
 //CHECK SIGNATURE AND DOCUMENT
 app.post('/check_sign', upload.single('surat'), async(req, res)=>{
-    // let pdfBuffer = req.file.buffer;
-
-    // //Load pdf dari buffer
-    // const pdfDoc = await PDFDocument.load(pdfBuffer);
-
-    // //ada brp image qr di pdf
-    // let sig_qr_counter = 0;
     
-    // //mendapatkan semua object di pdf
-    // const indirectObjects = pdfDoc.context.indirectObjects;
-
-    // let qr_name;
-    // let qr_signatureHash;
-    // let qr_documentHash;
-
-    // //looping tiap object
-    // for (const [ref, object] of indirectObjects) {
-    //     //hanya ambil yg PDFRawStream
-    //     if (object instanceof PDFRawStream) {
-    //         const rawStreamContents = object.contents;
-    //         //cek apakah dia jpg/png
-    //         if (rawStreamContents.slice(0, 3).equals(Buffer.from([0xFF, 0xD8, 0xFF])) || 
-    //             rawStreamContents.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
-
-    //             try {
-    //                 const image = await Jimp.read(rawStreamContents);
-    //                 const qr = new qrCodeReader();
-
-    //                 const qrCodeResult = await new Promise((resolve, reject) => {
-    //                     qr.callback = (err, value) => {
-    //                         //jika image bkn qr code
-    //                         if (err) {
-    //                             resolve(null);
-    //                         } else {
-    //                             resolve(value);
-    //                         }
-    //                     };
-    //                     qr.decode(image.bitmap);
-    //                 });
-
-    //                 if (qrCodeResult && qrCodeResult.result) {
-    //                     const match = qrCodeResult.result.match(/^SIGNED BY:\s*(.+?)\s*SIGNATURE:\s*([\s\S]+?)\s*DOCUMENT:\s*([\s\S]+)$/);
-
-    //                     if (match) {
-    //                         //pisahkan isi dari digital signature
-    //                         qr_name = match[1];
-    //                         qr_signatureHash = match[2];
-    //                         qr_documentHash = match[3];
-    //                         sig_qr_counter++;
-    //                     } else {
-    //                         return res.json({ noQRCode : true });
-    //                     }
-    //                 }
-    //             } catch (err) {
-    //                 console.error('Error processing image:', err);
-    //             }
-    //         }
-    //     }
-    // }
-
-    // //jika tidak ada qr code digital signature
-    // if (sig_qr_counter == 0) {
-    //     //kosongkan buffer
-    //     req.file.buffer = null;
-    //     return res.json({ noQRCode : true });
-
-    // }
-    // Load the PDF
     let pdfBuffer = req.file.buffer;
-    console.log("📄 Loading PDF...");
 
-    // Load PDF from buffer
+    //load file pdf dari buffer
     const pdfDoc = await PDFDocument.load(pdfBuffer);
-    console.log("✅ PDF loaded successfully.");
 
     let sig_qr_counter = 0;
     const indirectObjects = pdfDoc.context.indirectObjects;
-    console.log(`🔍 Found ${indirectObjects.size} objects in PDF.`);
 
     let qr_name;
     let qr_signatureHash;
     let qr_documentHash;
 
+    //looping untuk akses tiap objek yang ada di pdf
     for (const [ref, object] of indirectObjects) {
-        console.log(`🔎 Processing object: ${ref}`);
-
         if (object instanceof PDFRawStream) {
-            console.log(`🎯 Object ${ref} is a PDFRawStream`);
-
             const rawStreamContents = object.contents;
-
-            let imageType = null;
-            if (rawStreamContents.slice(0, 3).equals(Buffer.from([0xFF, 0xD8, 0xFF]))) {
-                console.log(`🖼 Object ${ref} is a JPG image.`);
-                imageType = 'jpg';
-            } else if (rawStreamContents.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
-                console.log(`🖼 Object ${ref} is a PNG image.`);
-                imageType = 'png';
-            } else {
-                console.log(`🚫 Object ${ref} is NOT a valid image.`);
-                continue;
-            }
-
             try {
-                console.log(`📥 Reading image with Jimp...`);
-                const image = await Jimp.read(rawStreamContents);
-                console.log(`✅ Image loaded successfully.`);
 
-                // Save extracted QR image for debugging
-                const filePath = `debug_qr_${ref}.${imageType}`;
-                await image.writeAsync(filePath);
-                console.log(`📁 Saved extracted image: ${filePath}`);
-
-                if (!fs.existsSync(filePath)) {
-                    console.log(`🚨 ERROR: Extracted image was not saved.`);
-                    continue;
+                //cek apakah format file adalah JPG atau PNG
+                let isImage = false;
+                if (rawStreamContents.slice(0, 3).equals(Buffer.from([0xFF, 0xD8, 0xFF]))) {
+                    isImage = true;
+                } else if (rawStreamContents.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]))) {
+                    isImage = true;
                 }
 
-                // Preprocess the image to improve QR readability
-                image.grayscale().contrast(1).normalize();
-                image.resize(600, 600); // Ensure QR is big enough
+                if(isImage){
+                    //membaca gambar menggunakan jimp
+                    let image = await Jimp.read(rawStreamContents);
 
-                // Convert image to an ImageData-like object
-                const imageData = {
-                    data: new Uint8ClampedArray(image.bitmap.data),
-                    width: image.bitmap.width,
-                    height: image.bitmap.height
-                };
+                    //pre process gambar sehingga mudah dibaca 
+                    image = image
+                        .resize(600, 600)  //mengubah ukuran gambar
+                        .greyscale()        //memastikan gambar qr hitam putih
+                        .normalize();       //menyesuaikan kontras dan brightness
 
-                // Decode QR Code using qrcode-reader
-                const qr = new qrCodeReader();
-
-                const qrCodeResult = await new Promise((resolve, reject) => {
-                    qr.callback = (err, value) => {
-                        if (err) {
-                            console.log(`🚫 QR Code not detected in object ${ref}.`);
-                            resolve(null);
-                        } else {
-                            resolve(value.result);
-                        }
+                    //konversi gambar ke format yang diminta library jsQR
+                    const imageData = {
+                        data: new Uint8ClampedArray(image.bitmap.data),
+                        width: image.bitmap.width,
+                        height: image.bitmap.height,
                     };
-                    qr.decode(imageData); // Pass the correctly formatted ImageData
-                });
 
-                if (qrCodeResult) {
-                    console.log(`✅ QR Code detected: ${qrCodeResult}`);
+                    //decode isi qr code
+                    const qrCodeResult = jsQR(imageData.data, imageData.width, imageData.height);
 
-                    const match = qrCodeResult.match(
-                        /^SIGNED BY:\s*(.+?)\s*SIGNATURE:\s*([\s\S]+?)\s*DOCUMENT:\s*([\s\S]+)$/
-                    );
+                    if(qrCodeResult){
+                        //mengecek apakah isi qr code sesuai dengan template ttd
+                        const match = qrCodeResult.data.match(
+                            /^SIGNED BY:\s*(.+?)\s*SIGNATURE:\s*([\s\S]+?)\s*DOCUMENT:\s*([\s\S]+)$/
+                        );
 
-                    if (match) {
-                        console.log(`✅ QR Code matches expected format!`);
-                        qr_name = match[1];
-                        qr_signatureHash = match[2];
-                        qr_documentHash = match[3];
-                        sig_qr_counter++;
-                    } else {
-                        console.log(`🚨 QR Code format mismatch.`);
-                        return res.json({ noQRCode: true });
+                        if (match) {
+                            qr_name = match[1];
+                            qr_signatureHash = match[2];
+                            qr_documentHash = match[3];
+                            sig_qr_counter++;
+                        } else {
+                            //jika qr code bukanlah qr code ttd
+                            return res.json({ noQRCode: true });
+                        }
                     }
                 }
+                
+
             } catch (err) {
-                console.error('❌ Error processing image:', err);
+                console.error('Error processing image:', err);
             }
         }
     }
 
+    //jika tidak ditemukan qr code sama sekali di pdf
     if (sig_qr_counter === 0) {
-        console.log("❌ No valid QR Code found in the document.");
         req.file.buffer = null;
         return res.json({ noQRCode: true });
     }
-
-    console.log(`✅ Found ${sig_qr_counter} valid QR Code(s). Proceeding...`);
 
     //JIKA ADA DIGITAL SIGNATURE, LANJUTKAN PROSES SELANJUTNYA:
         //VERIFICATION ISI SURAT:

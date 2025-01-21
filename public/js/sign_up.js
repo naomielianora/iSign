@@ -49,6 +49,15 @@ document.addEventListener('DOMContentLoaded', function () {
       checkEmailAvailability(emailInput);
     });
 
+    //ambil nama lengkap yang diinput user
+    let nameInput = document.getElementById('nama_lengkap');
+    //untuk mengecek apakah nama lengkap yang diinput oleh user belum terdaftar di database
+    //menggunakan fecth API sehingga user tidak perlu submit terlebih dahulu untuk mengetahui
+    nameInput.addEventListener('input', function () {
+      let nameInput = this.value;
+      checkNameAvailability(nameInput);
+    });
+
     let submitButton = document.getElementById('submit_button');
 
     submitButton.addEventListener('click', function (event) {
@@ -79,6 +88,22 @@ async function checkEmailAvailability(inputed_email) {
   }
 }
 
+//mengirim nama lengkap yg diinput ke server (index.js)
+async function checkNameAvailability(inputed_name) {
+  try {
+    const response = await fetch(`/check_name?inputed_name=${encodeURIComponent(inputed_name)}`);
+    
+    if (response.ok) {
+      const responseData = await response.json();
+      updateNameInput(responseData.taken === false);
+    } else {
+      console.error('Network response was not ok:', response.status, response.statusText);
+    }
+  } catch (error) {
+    console.error('Fetch error:', error);
+  }
+}
+
 //untuk mengecek apakah benar" email yg diinput
 function validateEmail(email) {
   //menggunakan regex untuk mengecek apakah email yg diinput sesuai dengan pattern sebuah email
@@ -99,6 +124,20 @@ function updateEmailInput(emailAvailable, isValidEmail) {
   //jika email tidak valid, maka munculkan warning
   if (!isValidEmail) {
     emailWarning_notvalid.classList.remove("hidden");
+  }
+}
+
+function updateNameInput(nameAvailable) {
+  let nameWarning_taken = document.getElementById('name_warning_taken');
+  nameWarning_taken.classList.add("hidden");
+
+  //jika nama tidak unik, maka munculkan warning
+  if (!nameAvailable) {
+    nameWarning_taken.classList.remove("hidden");
+  }
+  //jika email tidak valid, maka munculkan warning
+  if (!nameAvailable) {
+    nameWarning_taken.classList.remove("hidden");
   }
 }
 

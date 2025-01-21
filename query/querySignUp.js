@@ -31,3 +31,19 @@ export const signUpUser = async(nama_lengkap_sign_up, email_sign_up, password_si
         })
     })
   };
+
+//cek ke database apakah nama lengkap yang diisi sudah ada di database
+export const nameChecker = async(name) => {
+    const conn = await dbConnect();
+    return new Promise((resolve, reject) => {
+        conn.query('SELECT id_user FROM user WHERE nama_lengkap = ?', [name], (err, result) => {
+            if(err){
+                reject (err);
+            }
+            else{
+                resolve(result);
+            }
+        });
+        conn.release();
+    });
+};
